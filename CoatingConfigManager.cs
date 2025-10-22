@@ -86,14 +86,18 @@ namespace RHCoatingApp
                         PrimerHardenerPercent = 6.0,
                         PrimerThinnerPercent = 10.0,
                         TopcoatHardenerPercent = 15.0,
-                        TopcoatThinnerPercent = 20.0
+                        TopcoatThinnerPercent = 20.0,
+                        PrimerCoatMultiplier = 1.0,
+                        TopcoatCoatMultiplier = 1.0
                     },
                     Outdoor = new AdditiveSettings
                     {
                         PrimerHardenerPercent = 8.0,
                         PrimerThinnerPercent = 12.0,
                         TopcoatHardenerPercent = 18.0,
-                        TopcoatThinnerPercent = 25.0
+                        TopcoatThinnerPercent = 25.0,
+                        PrimerCoatMultiplier = 1.0,
+                        TopcoatCoatMultiplier = 2.0
                     }
                 },
                 MaterialPrices = new MaterialPrices
@@ -111,6 +115,7 @@ namespace RHCoatingApp
                 DefaultSettings = new DefaultSettings
                 {
                     TimeFactor = 0.5,
+                    TimePrice = 80.0,
                     DefaultApplicationType = "Indoor",
                     DefaultPrimer = "Standard Primer",
                     DefaultTopcoat = "Basic Topcoat",
@@ -154,6 +159,8 @@ namespace RHCoatingApp
         public double PrimerThinnerPercent { get; set; }
         public double TopcoatHardenerPercent { get; set; }
         public double TopcoatThinnerPercent { get; set; }
+        public double PrimerCoatMultiplier { get; set; }
+        public double TopcoatCoatMultiplier { get; set; }
     }
 
     public class MaterialPrices
@@ -173,6 +180,7 @@ namespace RHCoatingApp
     public class DefaultSettings
     {
         public double TimeFactor { get; set; }
+        public double TimePrice { get; set; }
         public string DefaultApplicationType { get; set; }
         public string DefaultPrimer { get; set; }
         public string DefaultTopcoat { get; set; }

@@ -24,10 +24,11 @@ namespace RHCoatingApp
         /// <param name="config">Material configuration used for calculation</param>
         /// <param name="costs">Calculated costs</param>
         /// <param name="estimatedTime">Estimated time for the coating job</param>
+        /// <param name="timePrice">Hourly rate for time calculation</param>
         /// <param name="calculationResult">Calculation result with final offer price</param>
         /// <param name="calculationFactors">Current calculation factors as dictionary</param>
         public static void Export(string filename, double surfaceArea_mm2, List<ObjectInfo> selectedObjects,
-                                  MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                  MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                   CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             string extension = Path.GetExtension(filename).ToLower();
@@ -35,14 +36,14 @@ namespace RHCoatingApp
             switch (extension)
             {
                 case ".xlsx":
-                    ExportToExcel(filename, surfaceArea_mm2, selectedObjects, config, costs, estimatedTime, calculationResult, calculationFactors);
+                    ExportToExcel(filename, surfaceArea_mm2, selectedObjects, config, costs, estimatedTime, timePrice, calculationResult, calculationFactors);
                     break;
                 case ".csv":
-                    ExportToCSV(filename, surfaceArea_mm2, selectedObjects, config, costs, estimatedTime, calculationResult, calculationFactors);
+                    ExportToCSV(filename, surfaceArea_mm2, selectedObjects, config, costs, estimatedTime, timePrice, calculationResult, calculationFactors);
                     break;
                 case ".txt":
                 default:
-                    ExportToText(filename, surfaceArea_mm2, selectedObjects, config, costs, estimatedTime, calculationResult, calculationFactors);
+                    ExportToText(filename, surfaceArea_mm2, selectedObjects, config, costs, estimatedTime, timePrice, calculationResult, calculationFactors);
                     break;
             }
         }
@@ -50,7 +51,7 @@ namespace RHCoatingApp
         #region Text Export
 
         private static void ExportToText(string filename, double surfaceArea_mm2, List<ObjectInfo> selectedObjects,
-                                         MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                         MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                          CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             using (var writer = new StreamWriter(filename))
@@ -75,10 +76,12 @@ namespace RHCoatingApp
                         double objArea_m2 = obj.SurfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
                         var objCosts = CalculateIndividualCosts(obj.SurfaceArea_mm2, config);
                         var objTime = EstimateIndividualTime(obj.SurfaceArea_mm2, config.TimeFactor);
+                        double objTimeTotal = objTime * timePrice;
                         
                         WriteObjectMaterialDetails(writer, objArea_m2, config, objCosts);
                         writer.WriteLine($"  {L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TotalMaterialCost)}");
                         writer.WriteLine($"  {L.Time.EstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(objTime)}");
+                        writer.WriteLine($"  {L.Time.TimeTotal}: {UnitsAndLabelsConfigManager.FormatCurrency(objTimeTotal)}");
                         writer.WriteLine();
                     }
 
@@ -87,7 +90,7 @@ namespace RHCoatingApp
                 }
 
                 // Export summary
-                WriteSummary(writer, surfaceArea_mm2, selectedObjects.Count, config, costs, estimatedTime, calculationResult, calculationFactors);
+                WriteSummary(writer, surfaceArea_mm2, selectedObjects.Count, config, costs, estimatedTime, timePrice, calculationResult, calculationFactors);
             }
         }
 
@@ -117,7 +120,7 @@ namespace RHCoatingApp
         }
 
         private static void WriteSummary(StreamWriter writer, double surfaceArea_mm2, int objectCount,
-                                         MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                         MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                          CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             writer.WriteLine($"{L.Sections.Summary}:");
@@ -162,9 +165,13 @@ namespace RHCoatingApp
                 writer.WriteLine();
             }
 
+            double totalTimeTotal = estimatedTime * timePrice;
+            
             writer.WriteLine($"{L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(costs.TotalMaterialCost)}");
             writer.WriteLine($"{L.Time.TotalEstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(estimatedTime)}");
             writer.WriteLine($"{L.Time.TimeFactor}: {config.TimeFactor:F2} {U.Time.Unit}/{U.Area.LargeUnit}");
+            writer.WriteLine($"{L.Time.TimePrice}: {UnitsAndLabelsConfigManager.FormatCurrency(timePrice)} / {U.Time.Unit}");
+            writer.WriteLine($"{L.Time.TimeTotal}: {UnitsAndLabelsConfigManager.FormatCurrency(totalTimeTotal)}");
 
             // Add calculation breakdown if available
             if (calculationResult != null && calculationFactors != null)
@@ -187,6 +194,10 @@ namespace RHCoatingApp
 
                 writer.WriteLine();
                 writer.WriteLine($"{L.Costs.FinalOfferPrice}: {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.FinalOfferPrice)}");
+                writer.WriteLine();
+                
+                double finalOfferPriceWithTime = calculationResult.FinalOfferPrice + totalTimeTotal;
+                writer.WriteLine($"{L.Costs.FinalOfferPriceWithTime}: {UnitsAndLabelsConfigManager.FormatCurrency(finalOfferPriceWithTime)}");
             }
         }
 
@@ -195,7 +206,7 @@ namespace RHCoatingApp
         #region CSV Export
 
         private static void ExportToCSV(string filename, double surfaceArea_mm2, List<ObjectInfo> selectedObjects,
-                                        MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                        MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                         CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             using (var writer = new StreamWriter(filename))
@@ -215,7 +226,7 @@ namespace RHCoatingApp
                                $"{L.Materials.Topcoat} ({U.Weight.SmallUnit}),{L.Materials.Topcoat} ({U.Weight.LargeUnit}),{L.Materials.Topcoat} {L.Properties.Coats},{L.Materials.Topcoat} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
                                $"{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.SmallUnit}),{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.LargeUnit}),{L.Materials.Topcoat} {L.Materials.Hardener} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
                                $"{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.SmallUnit}),{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.LargeUnit}),{L.Materials.Topcoat} {L.Materials.Thinner} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
-                               $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol}),{L.Time.EstimatedTime} ({U.Time.UnitLong})");
+                               $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol}),{L.Time.EstimatedTime} ({U.Time.UnitLong}),{L.Time.TimeTotal} ({U.Currency.Symbol})");
                 
                 if (selectedObjects != null && selectedObjects.Count > 0)
                 {
@@ -225,6 +236,7 @@ namespace RHCoatingApp
                         double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
                         var objCosts = CalculateIndividualCosts(obj.SurfaceArea_mm2, config);
                         var objTime = EstimateIndividualTime(obj.SurfaceArea_mm2, config.TimeFactor);
+                        double objTimeTotal = objTime * timePrice;
                         
                         var amounts = CalculateMaterialAmounts(objArea_m2, config);
                         
@@ -235,17 +247,17 @@ namespace RHCoatingApp
                                        $"{amounts.TopcoatGrams:F1},{amounts.TopcoatKg:F3},{config.TopcoatCoatMultiplier:F0},{objCosts.TopcoatCost:F2}," +
                                        $"{amounts.TopcoatHardenerGrams:F1},{amounts.TopcoatHardenerKg:F3},{objCosts.TopcoatHardenerCost:F2}," +
                                        $"{amounts.TopcoatThinnerGrams:F1},{amounts.TopcoatThinnerKg:F3},{objCosts.TopcoatThinnerCost:F2}," +
-                                       $"{objCosts.TotalMaterialCost:F2},{objTime:F2}");
+                                       $"{objCosts.TotalMaterialCost:F2},{objTime:F2},{objTimeTotal:F2}");
                     }
                 }
                 
                 writer.WriteLine();
-                WriteCSVSummary(writer, surfaceArea_mm2, selectedObjects.Count, config, costs, estimatedTime, calculationResult, calculationFactors);
+                WriteCSVSummary(writer, surfaceArea_mm2, selectedObjects.Count, config, costs, estimatedTime, timePrice, calculationResult, calculationFactors);
             }
         }
 
         private static void WriteCSVSummary(StreamWriter writer, double surfaceArea_mm2, int objectCount,
-                                            MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                            MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                             CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             writer.WriteLine(L.Sections.Summary);
@@ -283,9 +295,13 @@ namespace RHCoatingApp
                 writer.WriteLine($"Topcoat Thinner ({config.TopcoatThinnerPercent:F1}%),{totalAmounts.TopcoatThinnerGrams:F1} g ({totalAmounts.TopcoatThinnerKg:F3} kg) - Fr. {costs.TopcoatThinnerCost:F2}");
             }
             
+            double totalTimeTotal = estimatedTime * timePrice;
+            
             writer.WriteLine($"Total Material Cost (Fr.),{costs.TotalMaterialCost:F2}");
             writer.WriteLine($"Total Estimated Time (hours),{estimatedTime:F2}");
             writer.WriteLine($"Time Factor (h/m²),{config.TimeFactor:F2}");
+            writer.WriteLine($"Time Price (Fr./h),{timePrice:F2}");
+            writer.WriteLine($"Time Total (Fr.),{totalTimeTotal:F2}");
 
             // Add calculation breakdown if available
             if (calculationResult != null && calculationFactors != null)
@@ -307,6 +323,10 @@ namespace RHCoatingApp
 
                 writer.WriteLine();
                 writer.WriteLine($"Final Offer Price (Fr.),{calculationResult.FinalOfferPrice:F2}");
+                writer.WriteLine();
+                
+                double finalOfferPriceWithTime = calculationResult.FinalOfferPrice + totalTimeTotal;
+                writer.WriteLine($"Final Offer Price with Time (Fr.),{finalOfferPriceWithTime:F2}");
             }
         }
 
@@ -315,7 +335,7 @@ namespace RHCoatingApp
         #region Excel Export
 
         private static void ExportToExcel(string filename, double surfaceArea_mm2, List<ObjectInfo> selectedObjects,
-                                          MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                          MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                           CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             using (var workbook = new XLWorkbook())
@@ -338,10 +358,10 @@ namespace RHCoatingApp
                 row += 2;
 
                 // Individual objects table
-                row = WriteExcelObjectsTable(worksheet, row, selectedObjects, config);
+                row = WriteExcelObjectsTable(worksheet, row, selectedObjects, config, timePrice);
                 
                 // Summary
-                row = WriteExcelSummary(worksheet, row, surfaceArea_mm2, selectedObjects.Count, config, costs, estimatedTime, calculationResult, calculationFactors);
+                row = WriteExcelSummary(worksheet, row, surfaceArea_mm2, selectedObjects.Count, config, costs, estimatedTime, timePrice, calculationResult, calculationFactors);
 
                 // Auto-fit columns
                 worksheet.Columns().AdjustToContents();
@@ -351,7 +371,7 @@ namespace RHCoatingApp
             }
         }
 
-        private static int WriteExcelObjectsTable(IXLWorksheet worksheet, int row, List<ObjectInfo> selectedObjects, MaterialConfig config)
+        private static int WriteExcelObjectsTable(IXLWorksheet worksheet, int row, List<ObjectInfo> selectedObjects, MaterialConfig config, double timePrice)
         {
             worksheet.Cell(row, 1).Value = L.Sections.IndividualObjects;
             worksheet.Cell(row, 1).Style.Font.Bold = true;
@@ -367,7 +387,7 @@ namespace RHCoatingApp
                 $"{L.Materials.Topcoat} ({U.Weight.SmallUnit})", $"{L.Materials.Topcoat} ({U.Weight.LargeUnit})", $"{L.Materials.Topcoat} {L.Properties.Coats}", $"{L.Materials.Topcoat} {L.Properties.TotalCost} ({U.Currency.Symbol})",
                 $"{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.SmallUnit})", $"{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.LargeUnit})", $"{L.Materials.Topcoat} {L.Materials.Hardener} {L.Properties.TotalCost} ({U.Currency.Symbol})",
                 $"{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.SmallUnit})", $"{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.LargeUnit})", $"{L.Materials.Topcoat} {L.Materials.Thinner} {L.Properties.TotalCost} ({U.Currency.Symbol})",
-                $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol})", $"{L.Time.EstimatedTime} ({U.Time.UnitLong})"
+                $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol})", $"{L.Time.EstimatedTime} ({U.Time.UnitLong})", $"{L.Time.TimeTotal} ({U.Currency.Symbol})"
             };
             
             for (int col = 0; col < headers.Length; col++)
@@ -387,6 +407,7 @@ namespace RHCoatingApp
                     double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
                     var objCosts = CalculateIndividualCosts(obj.SurfaceArea_mm2, config);
                     var objTime = EstimateIndividualTime(obj.SurfaceArea_mm2, config.TimeFactor);
+                    double objTimeTotal = objTime * timePrice;
                     var amounts = CalculateMaterialAmounts(objArea_m2, config);
                     
                     int col = 1;
@@ -416,6 +437,7 @@ namespace RHCoatingApp
                     worksheet.Cell(row, col++).Value = objCosts.TopcoatThinnerCost;
                     worksheet.Cell(row, col++).Value = objCosts.TotalMaterialCost;
                     worksheet.Cell(row, col++).Value = objTime;
+                    worksheet.Cell(row, col++).Value = objTimeTotal;
                     
                     row += 1;
                 }
@@ -425,7 +447,7 @@ namespace RHCoatingApp
         }
 
         private static int WriteExcelSummary(IXLWorksheet worksheet, int row, double surfaceArea_mm2, int objectCount,
-                                             MaterialConfig config, CostCalculation costs, double estimatedTime,
+                                             MaterialConfig config, CostCalculation costs, double estimatedTime, double timePrice,
                                              CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
             worksheet.Cell(row, 1).Value = L.Sections.Summary;
@@ -521,6 +543,16 @@ namespace RHCoatingApp
             
             worksheet.Cell(row, 1).Value = $"{L.Time.TimeFactor} ({U.Time.Unit}/{U.Area.LargeUnit}):";
             worksheet.Cell(row, 2).Value = config.TimeFactor;
+            row += 1;
+            
+            double totalTimeTotal = estimatedTime * timePrice;
+            
+            worksheet.Cell(row, 1).Value = $"{L.Time.TimePrice} ({U.Currency.Symbol}/{U.Time.Unit}):";
+            worksheet.Cell(row, 2).Value = timePrice;
+            row += 1;
+            
+            worksheet.Cell(row, 1).Value = $"{L.Time.TimeTotal} ({U.Currency.Symbol}):";
+            worksheet.Cell(row, 2).Value = totalTimeTotal;
             row += 2;
 
             // Add calculation breakdown if available
@@ -576,6 +608,14 @@ namespace RHCoatingApp
                 worksheet.Cell(row, 1).Style.Font.Bold = true;
                 worksheet.Cell(row, 2).Style.Font.Bold = true;
                 worksheet.Cell(row, 2).Style.Fill.BackgroundColor = XLColor.LightYellow;
+                row += 2;
+                
+                double finalOfferPriceWithTime = calculationResult.FinalOfferPrice + totalTimeTotal;
+                worksheet.Cell(row, 1).Value = $"{L.Costs.FinalOfferPriceWithTime} ({U.Currency.Symbol}):";
+                worksheet.Cell(row, 2).Value = finalOfferPriceWithTime;
+                worksheet.Cell(row, 1).Style.Font.Bold = true;
+                worksheet.Cell(row, 2).Style.Font.Bold = true;
+                worksheet.Cell(row, 2).Style.Fill.BackgroundColor = XLColor.LightGreen;
                 row += 1;
             }
 

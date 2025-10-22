@@ -31,6 +31,7 @@ namespace RHCoatingApp
         private NumericStepper primerConsumptionStepper;
         private NumericStepper topcoatConsumptionStepper;
         private NumericStepper timeFactorStepper;
+        private NumericStepper timePriceStepper;
         private NumericStepper hardenerPriceStepper;
         private NumericStepper thinnerPriceStepper;
         private NumericStepper primerCoatMultiplierStepper;
@@ -367,11 +368,25 @@ namespace RHCoatingApp
             {
                 MinValue = 0.01,
                 MaxValue = 10.0,
-                Value = 0.5,
+                Value = CoatingConfigManager.Config?.DefaultSettings?.TimeFactor ?? 0.5,
                 DecimalPlaces = 2,
                 Increment = 0.1
             };
             layout.AddRow(timeFactorStepper);
+            layout.EndHorizontal();
+
+            // Time price
+            layout.BeginHorizontal();
+            layout.AddRow(new Label { Text = "Time Price (Fr./h):", Width = 120 });
+            timePriceStepper = new NumericStepper
+            {
+                MinValue = 0,
+                MaxValue = 500,
+                Value = CoatingConfigManager.Config?.DefaultSettings?.TimePrice ?? 80.0,
+                DecimalPlaces = 2,
+                Increment = 5
+            };
+            layout.AddRow(timePriceStepper);
             layout.EndHorizontal();
 
             layout.AddSeparateRow(null);
@@ -738,15 +753,31 @@ namespace RHCoatingApp
 
         private void OnApplicationTypeChanged(object sender, EventArgs e)
         {
+            var config = CoatingConfigManager.Config;
+            
             if (applicationTypeRadio.SelectedKey == "Indoor")
             {
                 indoorAdditivePanel.Visible = true;
                 outdoorAdditivePanel.Visible = false;
+                
+                // Set Indoor multipliers from config
+                if (config?.ApplicationDefaults?.Indoor != null)
+                {
+                    primerCoatMultiplierStepper.Value = config.ApplicationDefaults.Indoor.PrimerCoatMultiplier;
+                    topcoatCoatMultiplierStepper.Value = config.ApplicationDefaults.Indoor.TopcoatCoatMultiplier;
+                }
             }
             else
             {
                 indoorAdditivePanel.Visible = false;
                 outdoorAdditivePanel.Visible = true;
+                
+                // Set Outdoor multipliers from config
+                if (config?.ApplicationDefaults?.Outdoor != null)
+                {
+                    primerCoatMultiplierStepper.Value = config.ApplicationDefaults.Outdoor.PrimerCoatMultiplier;
+                    topcoatCoatMultiplierStepper.Value = config.ApplicationDefaults.Outdoor.TopcoatCoatMultiplier;
+                }
             }
         }
 
@@ -924,8 +955,13 @@ namespace RHCoatingApp
                         results.AppendLine($"    + {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(MaterialConfig.TopcoatHardenerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatHardenerCost)}");
                         results.AppendLine($"    + {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(MaterialConfig.TopcoatThinnerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatThinnerCost)}");
                     }
+                    
+                    // Calculate time total for this object
+                    double objTimeTotal = objTime * timePriceStepper.Value;
+                    
                     results.AppendLine($"  {L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TotalMaterialCost)}");
                     results.AppendLine($"  {L.Time.EstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(objTime)}");
+                    results.AppendLine($"  {L.Time.TimeTotal}: {UnitsAndLabelsConfigManager.FormatCurrency(objTimeTotal)}");
                     results.AppendLine();
                 }
 
@@ -976,9 +1012,14 @@ namespace RHCoatingApp
                 results.AppendLine();
             }
 
+            // Calculate total time cost
+            double totalTimeTotal = EstimatedTime * timePriceStepper.Value;
+            
             results.AppendLine($"{L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(Costs.TotalMaterialCost)}");
             results.AppendLine($"{L.Time.TotalEstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(EstimatedTime)}");
             results.AppendLine($"{L.Time.TimeFactor}: {MaterialConfig.TimeFactor:F2} {U.Time.Unit}/{U.Area.LargeUnit}");
+            results.AppendLine($"{L.Time.TimePrice}: {UnitsAndLabelsConfigManager.FormatCurrency(timePriceStepper.Value)} / {U.Time.Unit}");
+            results.AppendLine($"{L.Time.TimeTotal}: {UnitsAndLabelsConfigManager.FormatCurrency(totalTimeTotal)}");
 
             resultsTextArea.Text = results.ToString();
         }
@@ -1009,6 +1050,7 @@ namespace RHCoatingApp
                         MaterialConfig,
                         Costs,
                         EstimatedTime,
+                        timePriceStepper.Value,
                         CalculationResult,
                         calculationFactorSteppers?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value)
                     );
@@ -1169,8 +1211,13 @@ namespace RHCoatingApp
                         results.AppendLine($"    + {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(MaterialConfig.TopcoatHardenerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatHardenerCost)}");
                         results.AppendLine($"    + {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(MaterialConfig.TopcoatThinnerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatThinnerCost)}");
                     }
+                    
+                    // Calculate time total for this object
+                    double objTimeTotal = objTime * timePriceStepper.Value;
+                    
                     results.AppendLine($"  {L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TotalMaterialCost)}");
                     results.AppendLine($"  {L.Time.EstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(objTime)}");
+                    results.AppendLine($"  {L.Time.TimeTotal}: {UnitsAndLabelsConfigManager.FormatCurrency(objTimeTotal)}");
                     results.AppendLine();
                 }
 
@@ -1221,9 +1268,14 @@ namespace RHCoatingApp
                 results.AppendLine();
             }
 
+            // Calculate total time cost
+            double totalTimeTotal = EstimatedTime * timePriceStepper.Value;
+            
             results.AppendLine($"{L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(Costs.TotalMaterialCost)}");
             results.AppendLine($"{L.Time.TotalEstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(EstimatedTime)}");
             results.AppendLine($"{L.Time.TimeFactor}: {MaterialConfig.TimeFactor:F2} {U.Time.Unit}/{U.Area.LargeUnit}");
+            results.AppendLine($"{L.Time.TimePrice}: {UnitsAndLabelsConfigManager.FormatCurrency(timePriceStepper.Value)} / {U.Time.Unit}");
+            results.AppendLine($"{L.Time.TimeTotal}: {UnitsAndLabelsConfigManager.FormatCurrency(totalTimeTotal)}");
 
             // Add calculation breakdown
             results.AppendLine();
@@ -1242,6 +1294,11 @@ namespace RHCoatingApp
                 results.AppendLine($"{L.Costs.ProfitMargin} ({UnitsAndLabelsConfigManager.FormatPercentage(profitFactor)}):      {UnitsAndLabelsConfigManager.FormatCurrency(CalculationResult.ProfitMargin)}");
             results.AppendLine();
             results.AppendLine($"{L.Costs.FinalOfferPrice}: {UnitsAndLabelsConfigManager.FormatCurrency(CalculationResult.FinalOfferPrice)}");
+            results.AppendLine();
+            
+            // Calculate final offer price with time
+            double finalOfferPriceWithTime = CalculationResult.FinalOfferPrice + totalTimeTotal;
+            results.AppendLine($"{L.Costs.FinalOfferPriceWithTime}: {UnitsAndLabelsConfigManager.FormatCurrency(finalOfferPriceWithTime)}");
 
             resultsTextArea.Text = results.ToString();
         }

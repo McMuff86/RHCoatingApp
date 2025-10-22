@@ -4,13 +4,17 @@
       "PrimerHardenerPercent": 6.0,
       "PrimerThinnerPercent": 10.0,
       "TopcoatHardenerPercent": 15.0,
-      "TopcoatThinnerPercent": 20.0
+      "TopcoatThinnerPercent": 20.0,
+      "PrimerCoatMultiplier": 1.0,
+      "TopcoatCoatMultiplier": 1.0
     },
     "Outdoor": {
       "PrimerHardenerPercent": 6.0,
-      "PrimerThinnerPercent": 12.0,
+      "PrimerThinnerPercent": 10.0,
       "TopcoatHardenerPercent": 15.0,
-      "TopcoatThinnerPercent": 20.0
+      "TopcoatThinnerPercent": 20.0,
+      "PrimerCoatMultiplier": 1.0,
+      "TopcoatCoatMultiplier": 2.0
     }
   },
   "MaterialPrices": {
@@ -45,6 +49,7 @@
   ],
   "DefaultSettings": {
     "TimeFactor": 0.5,
+    "TimePrice": 80.0,
     "DefaultApplicationType": "Indoor",
     "DefaultPrimer": "Standard Primer",
     "DefaultTopcoat": "Basic Topcoat",

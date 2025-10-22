@@ -42,12 +42,15 @@
       "AdministrationCost": "Administration Cost",
       "SalesCost": "Sales Cost",
       "ProfitMargin": "Profit Margin",
-      "FinalOfferPrice": "FINAL OFFER PRICE"
+      "FinalOfferPrice": "FINAL OFFER PRICE",
+      "FinalOfferPriceWithTime": "FINAL OFFER PRICE WITH TIME"
     },
     "Time": {
       "EstimatedTime": "Estimated Time",
       "TotalEstimatedTime": "Total Estimated Time",
-      "TimeFactor": "Time Factor"
+      "TimeFactor": "Time Factor",
+      "TimePrice": "Time Price",
+      "TimeTotal": "Time Total"
     },
     "Sections": {
       "IndividualObjects": "INDIVIDUAL OBJECTS",
