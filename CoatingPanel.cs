@@ -1,4 +1,4 @@
-ÿþusing System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Eto.Forms;
@@ -80,7 +80,7 @@ namespace RHCoatingApp
             {
                 string objectCount = selectedObjects.Count > 0 ? $"{selectedObjects.Count} object(s)" : "No objects";
                 surfaceAreaLabel.Text = surfaceArea_mm2 > 0
-                    ? $"{objectCount} - {surfaceArea_mm2:F2} mm² ({surfaceArea_mm2 / 1000000:F4} m²)"
+                    ? $"{objectCount} - {surfaceArea_mm2:F2} mmï¿½ ({surfaceArea_mm2 / 1000000:F4} mï¿½)"
                     : "No objects selected";
             }
             // Reset results
@@ -232,7 +232,7 @@ namespace RHCoatingApp
             surfaceAreaLabel = new Label 
             { 
                 Text = surfaceArea_mm2 > 0 
-                    ? $"{surfaceArea_mm2:F2} mm² ({surfaceArea_mm2 / 1000000:F4} m²)"
+                    ? $"{surfaceArea_mm2:F2} mmï¿½ ({surfaceArea_mm2 / 1000000:F4} mï¿½)"
                     : "No objects selected",
                 Font = new Font(SystemFont.Default, 10)
             };
@@ -260,12 +260,12 @@ namespace RHCoatingApp
 
             // Primer consumption
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Consumption (g/m²):", Width = 120 });
+            layout.AddRow(new Label { Text = "Consumption (g/mï¿½):", Width = 120 });
             primerConsumptionStepper = new NumericStepper
             {
                 MinValue = 0,
                 MaxValue = 1000,
-                Value = 200, // Default 200 g/m²
+                Value = 200, // Default 200 g/mï¿½
                 DecimalPlaces = 1,
                 Increment = 10
             };
@@ -303,12 +303,12 @@ namespace RHCoatingApp
 
             // Topcoat consumption
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Consumption (g/m²):", Width = 120 });
+            layout.AddRow(new Label { Text = "Consumption (g/mï¿½):", Width = 120 });
             topcoatConsumptionStepper = new NumericStepper
             {
                 MinValue = 0,
                 MaxValue = 1000,
-                Value = 200, // Default 200 g/m²
+                Value = 200, // Default 200 g/mï¿½
                 DecimalPlaces = 1,
                 Increment = 10
             };
@@ -333,7 +333,7 @@ namespace RHCoatingApp
 
             // Time factor
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Time Factor (h/m²):", Width = 120 });
+            layout.AddRow(new Label { Text = "Time Factor (h/mï¿½):", Width = 120 });
             timeFactorStepper = new NumericStepper
             {
                 MinValue = 0.1,
@@ -762,7 +762,7 @@ namespace RHCoatingApp
                 {
                     var obj = selectedObjects[i];
                     results.AppendLine($"Object {i + 1}: {obj.Name}");
-                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm² ({obj.SurfaceArea_mm2 / 1000000:F4} m²)");
+                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mmï¿½ ({obj.SurfaceArea_mm2 / 1000000:F4} mï¿½)");
                     
                     // Calculate costs and material amounts for this individual object
                     double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
@@ -808,8 +808,8 @@ namespace RHCoatingApp
             results.AppendLine("SUMMARY:");
             results.AppendLine();
             results.AppendLine($"Total Objects: {selectedObjects.Count}");
-            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mm²");
-            results.AppendLine($"                    ({surfaceArea_mm2 / 1000000:F4} m²)");
+            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mmï¿½");
+            results.AppendLine($"                    ({surfaceArea_mm2 / 1000000:F4} mï¿½)");
             results.AppendLine();
 
             double totalArea_m2 = surfaceArea_mm2 / 1000000.0;
@@ -824,7 +824,7 @@ namespace RHCoatingApp
                 double totalPrimerThinnerKg = totalPrimerThinnerGrams / 1000.0;
                 
                 results.AppendLine($"Primer: {MaterialConfig.Primer.Name}");
-                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m²");
+                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/mï¿½");
                 results.AppendLine($"  Total Amount: {totalPrimerGrams:F1} g ({totalPrimerKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Primer.PricePerKg:F2}/kg");
                 results.AppendLine($"  Total Cost: Fr. {Costs.PrimerCost:F2}");
@@ -843,7 +843,7 @@ namespace RHCoatingApp
                 double totalTopcoatThinnerKg = totalTopcoatThinnerGrams / 1000.0;
                 
                 results.AppendLine($"Topcoat: {MaterialConfig.Topcoat.Name}");
-                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m²");
+                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/mï¿½");
                 results.AppendLine($"  Total Amount: {totalTopcoatGrams:F1} g ({totalTopcoatKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Topcoat.PricePerKg:F2}/kg");
                 results.AppendLine($"  Total Cost: Fr. {Costs.TopcoatCost:F2}");
@@ -854,7 +854,7 @@ namespace RHCoatingApp
 
             results.AppendLine($"Total Material Cost: Fr. {Costs.TotalMaterialCost:F2}");
             results.AppendLine($"Total Estimated Time: {EstimatedTime:F2} hours");
-            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/m²");
+            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/mï¿½");
 
             resultsTextArea.Text = results.ToString();
         }
@@ -899,4 +899,4 @@ namespace RHCoatingApp
 
         // Export methods moved to CoatingExporter.cs for better maintainability
     }
-}  
+}
