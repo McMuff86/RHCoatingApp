@@ -27,7 +27,22 @@ namespace RHCoatingApp
         // loading and shut down, add options pages to the Rhino _Option command
         // and maintain plug-in wide options in a document.
 
-        // Panel registration will be added later when Eto.Forms implementation is complete
-        // For now, the plugin works with command-line interface only
+        protected override LoadReturnCode OnLoad(ref string errorMessage)
+        {
+            try
+            {
+                // Register the dockable panel
+                var panel_type = typeof(CoatingPanel);
+                Panels.RegisterPanel(this, panel_type, "Coating Panel", System.Drawing.SystemIcons.Application);
+                
+                RhinoApp.WriteLine("Rhino CoatingApp loaded successfully.");
+                return LoadReturnCode.Success;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Failed to load Rhino CoatingApp: {ex.Message}";
+                return LoadReturnCode.ErrorNoDialog;
+            }
+        }
     }
 }

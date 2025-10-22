@@ -1,23 +1,48 @@
-# Binaries for programs and plugins
-*.exe
-*.exe.config
-*.dll
-*.so
-*.dylib
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
 
-# Visual Studio files
+# Visual Studio cache/options
+.vs/
+*.suo
 *.user
-*.aps
-*.pch
-*.vspscc
+*.userosscache
+*.sln.docstates
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build Results
 *_i.c
 *_p.c
-*.ncb
-*.suo
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
 *.tlb
+*.tli
 *.tlh
 *.tmp
 *.tmp_proj
+*_wpftmp.csproj
 *.log
 *.vspscc
 *.vssscc
@@ -26,67 +51,52 @@
 *.svclog
 *.scc
 
-# Visual Studio Code
-.vscode/
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
 
 # ReSharper
 _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
 
-# NuGet Packages
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# NuGet
 *.nupkg
-# The packages folder can be ignored because of Package Restore
+*.snupkg
 **/packages/*
-# except build/, which is used as an MSBuild target.
 !**/packages/build/
-# Uncomment if necessary however generally it will be regenerated when needed
-#!**/packages/repositories.config
-# NuGet v3's project.json files produces more ignoreable files
 *.nuget.props
 *.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
 
-# Microsoft Azure Build Output
-csx/
-*.build.csdef
+# .NET Core
+project.assets.json
+project.fragment.lock.json
 
-# Microsoft Azure Emulator
-ecf/
-rcf/
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
 
-# Windows Azure Service Definition Schema
-*.svd
-*.cscfg
+# Folder config file
+Desktop.ini
 
-# Windows Azure Service Runtime Information
-*.csxrole
-*.csxfg
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
 
-# Windows Store app package directory
-AppPackages/
-BundleArtifacts/
+# VS Code
+.vscode/
 
-# Visual Studio cache files
-# files ending in .cache can be ignored
-*.[Cc]ache
-# but keep track of directories ending in .cache
-!*.[Cc]ache/
+# Mac
+.DS_Store
 
-# Others
-ClientBin/
-~$*
-*~
-*.dbmdl
-*.dbproj.schemaview
-*.pfx
-*.publishsettings
-*.pfx
-*.publishsettings
-node_modules/
-bower_components/
-
-# Rhino Plugin specific
-bin/
-obj/
-*.rhp
-
+# Rhino plugin specific
+*.rhp.old
+*.rhi

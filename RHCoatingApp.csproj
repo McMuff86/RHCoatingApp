@@ -8,6 +8,7 @@
         Rhino 8 Mac: net7.0, net7.0-macos, net7.0-macos12.0, etc
     -->
     <TargetFrameworks>net7.0-windows;net48</TargetFrameworks>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <TargetExt>.rhp</TargetExt>
     <NoWarn>NU1701</NoWarn>
@@ -23,9 +24,14 @@
   
   <ItemGroup>
     <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
-    <PackageReference Include="Eto.Forms" Version="2.8.2" />
-    <PackageReference Include="Eto.Platform.Windows" Version="2.8.2" />
-    <PackageReference Include="Eto.Platform.Wpf" Version="2.8.2" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.10" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <!-- Exclude reference project files from compilation -->
+    <Compile Remove="RH_DB_Panel\**" />
+    <EmbeddedResource Remove="RH_DB_Panel\**" />
+    <None Remove="RH_DB_Panel\**" />
   </ItemGroup>
   
 </Project>

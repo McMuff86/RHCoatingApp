@@ -13,18 +13,25 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
 - **Details:** Supports complex geometries, including curved surfaces and composite objects.
 
 ### 2. **Material Configuration via Intuitive User Interface**
-- **Function:** Allows selection of primer and topcoat via a clear UI.
+- **Function:** Allows selection and configuration of primer and topcoat via a dockable Eto.Forms panel.
 - **Input Options:**
-  - Material selection from a predefined list (extendable with custom materials).
-  - Input of material consumption in grams per square meter.
-- **Benefit:** Flexible adaptation to various coating projects with immediate configuration preview.
+  - Material selection from a predefined list via dropdown controls
+  - Editable consumption rates (g/m²) for primer and topcoat
+  - Editable prices (Fr./kg) for primer and topcoat
+  - Time factor adjustment using numeric stepper control
+  - Direct object selection via "Select Objects" button
+  - Ability to clear current selection and start new calculation
+- **Implementation:** Dockable Rhino panel that remains visible during work
+- **Benefit:** Flexible adaptation to various coating projects with customizable material properties and professional user experience.
 
 ### 3. **Cost Calculation**
-- **Function:** Calculates material costs based on the stored prices for primer and topcoat, as well as the calculated surface area.
+- **Function:** Calculates material costs based on user-defined prices for primer and topcoat, as well as the calculated surface area.
 - **Details:**
-  - Automatic summation of costs for all selected materials.
-  - Supports multi-layer coatings (e.g., multiple layers of primer or topcoat).
-- **Benefit:** Transparent cost calculation for accurate budgeting and quoting.
+  - Costs displayed in Swiss Francs (Fr.)
+  - Automatic summation of costs for all selected materials
+  - Supports custom pricing and consumption rates
+  - Real-time calculation based on actual surface area
+- **Benefit:** Transparent cost calculation for accurate budgeting and quoting with Swiss currency support.
 
 ### 4. **Time Estimation**
 - **Function:** Allows input of a time factor per square meter to estimate the working time for coating tasks.
@@ -35,16 +42,21 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
 
 ### 5. **Export Function**
 - **Function:** Exports calculation results (surface area, material consumption, costs, working time) in a clear table.
-- **Formats:** CSV, XLSX, or JSON (for advanced integrations).
+- **Formats:** TXT and CSV formats with built-in file save dialog.
+- **Implementation:** Integrated export button within the UI dialog with Eto.Forms SaveFileDialog.
 - **Details:** Exported files include structured data with metadata (e.g., project name, date, user).
 - **Benefit:** Enables easy sharing of results with clients or other departments.
 
 ## Additional Features
 
 ### 6. **Material Database**
-- **Function:** Integrated database for common primers and topcoats with predefined properties (price, consumption per m²).
-- **Customization:** Ability to add or edit custom materials.
-- **Benefit:** Speeds up configuration by accessing stored material profiles.
+- **Function:** Integrated database for common primers and topcoats with predefined properties (price in Fr./kg, consumption in g/m²).
+- **Customization:** 
+  - Pre-defined materials: Standard Primer, Premium Primer, Basic Topcoat, Premium Topcoat
+  - User can edit consumption rates and prices directly in the UI
+  - Changes apply to current calculation without modifying database
+  - Dropdown selection automatically populates default values
+- **Benefit:** Speeds up configuration with sensible defaults while allowing full customization.
 
 ### 7. **Surface Visualization**
 - **Function:** Highlights selected surfaces in the Rhino viewport with color to visually verify the calculation areas.
@@ -62,11 +74,73 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
   - Adherence to coding standards (e.g., naming conventions, documentation).
 - **Referencing Rhino Developer Docs:** In case of uncertainties or implementation questions, the agent first consults the [Rhino Developer Documentation](https://developer.rhino3d.com/). If no suitable solutions are found, it searches online for appropriate approaches (e.g., forums, Stack Overflow, or other trusted sources).
 
+## Technical Implementation Details
+
+### User Interface Architecture
+- **Framework:** Eto.Forms (cross-platform UI framework integrated in Rhino 8)
+- **Panel Type:** Dockable Rhino Panel using `Rhino.UI.Panel` base class
+  - Registered in plugin `OnLoad` method via `Panels.RegisterPanel()`
+  - Can be docked anywhere in Rhino interface (left, right, floating)
+  - Remains visible while working in Rhino
+  - Opened via `Panels.OpenPanel()` command
+  - Provides seamless integration with Rhino's UI system
+- **Layout System:** `DynamicLayout` for flexible, responsive UI layout
+- **Key Controls:**
+  - `Button` controls for object selection ("Select Objects", "Clear Objects")
+  - `DropDown` for material selection (primer and topcoat)
+  - `NumericStepper` for editable consumption rates (g/m²)
+  - `NumericStepper` for editable prices (Fr./kg)
+  - `NumericStepper` for time factor configuration (h/m²)
+  - `TextArea` (read-only) for results display
+  - `Button` controls for calculations and export
+  - `SaveFileDialog` for file export functionality (TXT, CSV)
+
+### Code Organization
+- **CoatingApp.cs:** Main command class handling object selection, surface calculation, and panel updates
+  - Implements `CoatingApp` command to open panel and calculate surface areas
+  - Uses `Panels.OpenPanel()` to show the dockable panel
+  - Updates panel with calculated surface area via `UpdateSurfaceArea()` method
+- **CoatingPanel.cs:** Dockable Eto.Forms panel implementation
+  - Inherits from `Rhino.UI.Panel` base class
+  - Contains all material configuration UI and calculation logic
+  - GUID: `A1B2C3D4-E5F6-7890-ABCD-EF1234567890`
+  - Registered as "Coating Panel" in Rhino
+- **RHCoatingAppPlugin.cs:** Plugin initialization and lifecycle management
+  - Registers the dockable panel on plugin load
+  - Uses `System.Drawing.SystemIcons.Application` as panel icon
+- **Data Classes:** `MaterialConfig`, `MaterialInfo`, `CostCalculation` for structured data management
+
+### Unit Handling
+- **Internal Units:** All calculations use Rhino's native millimeters (mm) for surface areas
+- **Display Units:** Surface areas displayed in both mm² and m² for user convenience
+- **Material Calculations:** Automatically converts to m² for material consumption and cost calculations
+
+## Workflow
+
+### Typical Usage:
+1. **Open Coating Panel**: The panel opens automatically when the plugin loads, or use the `CoatingApp` command
+2. **Select Objects**: Click "Select Objects" button or run `CoatingApp` command to select 3D objects
+3. **Configure Materials**: 
+   - Select primer and/or topcoat from dropdown menus
+   - Adjust consumption rates (g/m²) as needed
+   - Adjust prices (Fr./kg) as needed
+   - Set time factor (h/m²) based on coating method
+4. **Calculate**: Click "Calculate" button to see results
+5. **Review Results**: Check surface area, material costs, and time estimates
+6. **Export** (optional): Export results to TXT or CSV file
+7. **New Calculation**: Click "Clear Objects" to reset and start a new calculation
+
+### Key Features:
+- Panel remains docked and visible throughout work session
+- Can switch between different object selections without closing panel
+- Material settings persist until manually changed
+- Real-time validation prevents calculation errors
+
 ## Installation
 1. Download the plugin from the official website or the Rhino Plugin Store.
 2. Install the plugin via the Rhino Plugin Manager.
 3. Restart Rhino to activate the plugin.
-4. Access the plugin via the toolbar or the `CoatingApp` command.
+4. Access the Coating Panel via `Panels → Coating Panel` or run the `CoatingApp` command.
 
 ## Use Cases
 - **Industry:** Calculating coating tasks for mechanical engineering, automotive, or aerospace components.
@@ -80,6 +154,16 @@ Specific documentation for individual modules or functions of the plugin is avai
 - [Visualization.md](Visualization.md) (for details on surface visualization, to be created as needed).
 - [Usage.md](Usage.md) (for step-by-step usage instructions).
 
+## Eto.Forms Documentation
+For UI development using Eto.Forms in Rhino plugins, refer to these official guides:
+- [Forms and Dialogs](https://developer.rhino3d.com/guides/eto/forms-and-dialogs/) - Understanding modal vs non-modal dialogs and semi-modal dialogs
+- [Existing Dialogs](https://developer.rhino3d.com/guides/eto/existing-dialogs/) - Using built-in dialogs like MessageBox, ColorPicker, and File dialogs
+- [Containers](https://developer.rhino3d.com/guides/eto/containers/) - Layout containers like Panels, Tables, Stack Layouts, Dynamic Layouts, and Pixel Layouts
+- [Controls](https://developer.rhino3d.com/guides/eto/controls/) - Available UI controls and their usage
+- [Data Context](https://developer.rhino3d.com/guides/eto/view-and-data/data-context/) - Data binding and context management
+- [View Models](https://developer.rhino3d.com/guides/eto/view-and-data/view-models/) - Model-View-ViewModel pattern implementation
+- [Binding](https://developer.rhino3d.com/guides/eto/view-and-data/binding/) - Data binding between UI and data models
+
 **Note:** New `*.md` files will be created as needed and linked in this section to ensure comprehensive documentation.
 
 ## Support and Feedback
@@ -92,4 +176,5 @@ Specific documentation for individual modules or functions of the plugin is avai
 - Advanced visualization options for coating processes (e.g., simulation of layer thicknesses).
 - Cloud integration for team collaboration.
 
-## Create a .gitignore
+## Version Control
+A comprehensive `.gitignore` file is included in the repository to exclude build artifacts, IDE-specific files, and other temporary files from version control.
