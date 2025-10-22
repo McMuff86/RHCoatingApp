@@ -109,11 +109,24 @@ namespace RHCoatingApp
     }
 
     // Data classes for the coating calculation
+    public enum ApplicationType
+    {
+        Indoor,
+        Outdoor
+    }
+
     public class MaterialConfig
     {
         public MaterialInfo Primer { get; set; }
         public MaterialInfo Topcoat { get; set; }
         public double TimeFactor { get; set; } = 0.5; // hours per square meter
+        public ApplicationType ApplicationType { get; set; } = ApplicationType.Indoor;
+        
+        // Percentages for additives
+        public double PrimerHardenerPercent { get; set; } = 6.0;
+        public double PrimerThinnerPercent { get; set; } = 10.0;
+        public double TopcoatHardenerPercent { get; set; } = 15.0;
+        public double TopcoatThinnerPercent { get; set; } = 20.0;
     }
 
     public class MaterialInfo
@@ -127,6 +140,10 @@ namespace RHCoatingApp
     {
         public double PrimerCost { get; set; }
         public double TopcoatCost { get; set; }
+        public double PrimerHardenerCost { get; set; }
+        public double PrimerThinnerCost { get; set; }
+        public double TopcoatHardenerCost { get; set; }
+        public double TopcoatThinnerCost { get; set; }
         public double TotalMaterialCost { get; set; }
     }
 

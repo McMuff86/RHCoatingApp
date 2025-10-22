@@ -18,20 +18,26 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
   - Material selection from a predefined list via dropdown controls
   - Editable consumption rates (g/m²) for primer and topcoat
   - Editable prices (Fr./kg) for primer and topcoat
+  - Application type toggle (Indoor/Outdoor) with specific additive percentages
+  - Hardener percentage configuration for primer and topcoat
+  - Thinner percentage configuration for primer and topcoat
   - Time factor adjustment using numeric stepper control
   - Direct object selection via "Select Objects" button
   - Ability to clear current selection and start new calculation
 - **Implementation:** Dockable Rhino panel that remains visible during work
-- **Benefit:** Flexible adaptation to various coating projects with customizable material properties and professional user experience.
+- **Benefit:** Flexible adaptation to various coating projects with customizable material properties, additive management, and professional user experience.
 
 ### 3. **Cost Calculation**
-- **Function:** Calculates material costs based on user-defined prices for primer and topcoat, as well as the calculated surface area.
+- **Function:** Calculates material costs based on user-defined prices for primer, topcoat, hardeners, and thinners, as well as the calculated surface area.
 - **Details:**
   - Costs displayed in Swiss Francs (Fr.)
-  - Automatic summation of costs for all selected materials
+  - Automatic summation of costs for all selected materials including additives
+  - Hardener costs calculated as percentage of base material (default: Fr. 30/kg)
+  - Thinner costs calculated as percentage of base material (default: Fr. 15/kg)
   - Supports custom pricing and consumption rates
   - Real-time calculation based on actual surface area
-- **Benefit:** Transparent cost calculation for accurate budgeting and quoting with Swiss currency support.
+  - Separate calculations for indoor and outdoor applications
+- **Benefit:** Transparent cost calculation for accurate budgeting and quoting with Swiss currency support, including all necessary additives.
 
 ### 4. **Time Estimation**
 - **Function:** Allows input of a time factor per square meter to estimate the working time for coating tasks.
@@ -84,16 +90,20 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
   - Remains visible while working in Rhino
   - Opened via `Panels.OpenPanel()` command
   - Provides seamless integration with Rhino's UI system
-- **Layout System:** `DynamicLayout` for flexible, responsive UI layout
+- **Layout System:** `DynamicLayout` and `StackLayout` for flexible, responsive UI layout
 - **Key Controls:**
   - `Button` controls for object selection ("Select Objects", "Clear Objects")
+  - `RadioButtonList` for application type selection (Indoor/Outdoor)
   - `DropDown` for material selection (primer and topcoat)
   - `NumericStepper` for editable consumption rates (g/m²)
   - `NumericStepper` for editable prices (Fr./kg)
+  - `NumericStepper` for hardener percentages (primer and topcoat)
+  - `NumericStepper` for thinner percentages (primer and topcoat)
   - `NumericStepper` for time factor configuration (h/m²)
   - `TextArea` (read-only) for results display
   - `Button` controls for calculations and export
-  - `SaveFileDialog` for file export functionality (TXT, CSV)
+  - `SaveFileDialog` for file export functionality (TXT, CSV, XLSX)
+  - Conditional visibility panels for Indoor/Outdoor additive configurations
 
 ### Code Organization
 - **CoatingApp.cs:** Main command class handling object selection, surface calculation, and panel updates
@@ -108,7 +118,7 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
 - **RHCoatingAppPlugin.cs:** Plugin initialization and lifecycle management
   - Registers the dockable panel on plugin load
   - Uses `System.Drawing.SystemIcons.Application` as panel icon
-- **Data Classes:** `MaterialConfig`, `MaterialInfo`, `CostCalculation` for structured data management
+- **Data Classes:** `ApplicationType` enum, `MaterialConfig`, `MaterialInfo`, `CostCalculation`, `ObjectInfo` for structured data management
 
 ### Unit Handling
 - **Internal Units:** All calculations use Rhino's native millimeters (mm) for surface areas
@@ -119,22 +129,29 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
 
 ### Typical Usage:
 1. **Open Coating Panel**: The panel opens automatically when the plugin loads, or use the `CoatingApp` command
-2. **Select Objects**: Click "Select Objects" button or run `CoatingApp` command to select 3D objects
-3. **Configure Materials**: 
+2. **Select Application Type**: Choose "Indoor" or "Outdoor" application
+3. **Configure Additives**: Set hardener and thinner percentages for the selected application type
+   - Indoor defaults: Primer Hardener 6%, Primer Thinner 10%, Topcoat Hardener 15%, Topcoat Thinner 20%
+   - Outdoor defaults: Primer Hardener 8%, Primer Thinner 12%, Topcoat Hardener 18%, Topcoat Thinner 25%
+4. **Select Objects**: Click "Select Objects" button or run `CoatingApp` command to select 3D objects
+5. **Configure Materials**: 
    - Select primer and/or topcoat from dropdown menus
-   - Adjust consumption rates (g/m²) as needed
+   - Adjust consumption rates (g/m²) as needed (default: 200 g/m²)
    - Adjust prices (Fr./kg) as needed
    - Set time factor (h/m²) based on coating method
-4. **Calculate**: Click "Calculate" button to see results
-5. **Review Results**: Check surface area, material costs, and time estimates
-6. **Export** (optional): Export results to TXT or CSV file
-7. **New Calculation**: Click "Clear Objects" to reset and start a new calculation
+6. **Calculate**: Click "Calculate" button to see results including additives
+7. **Review Results**: Check surface area, material amounts (including hardeners and thinners), costs, and time estimates
+8. **Export** (optional): Export results to TXT, CSV, or XLSX file with complete additive details
+9. **New Calculation**: Click "Clear Objects" to reset and start a new calculation
 
 ### Key Features:
 - Panel remains docked and visible throughout work session
 - Can switch between different object selections without closing panel
 - Material settings persist until manually changed
+- Application type toggle automatically shows/hides relevant additive controls
+- Separate default values for indoor and outdoor applications
 - Real-time validation prevents calculation errors
+- Comprehensive cost calculation including all additives (hardeners and thinners)
 
 ## Installation
 1. Download the plugin from the official website or the Rhino Plugin Store.
