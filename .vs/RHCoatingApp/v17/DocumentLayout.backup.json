@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\adrian.muff\\source\\repos\\RHCoatingApp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AB1A0722-6F8B-493C-B35F-3F99B7BE6494}|RHCoatingApp.csproj|c:\\users\\adrian.muff\\source\\repos\\rhcoatingapp\\coatingapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AB1A0722-6F8B-493C-B35F-3F99B7BE6494}|RHCoatingApp.csproj|solutionrelative:coatingapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{e5c86464-96be-4d7c-9a8b-abcb3bbf5f92}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CoatingApp.cs",
+              "DocumentMoniker": "C:\\Users\\adrian.muff\\source\\repos\\RHCoatingApp\\CoatingApp.cs",
+              "RelativeDocumentMoniker": "CoatingApp.cs",
+              "ToolTip": "C:\\Users\\adrian.muff\\source\\repos\\RHCoatingApp\\CoatingApp.cs",
+              "RelativeToolTip": "CoatingApp.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-22T05:12:26.506Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

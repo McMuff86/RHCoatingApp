@@ -1,0 +1,92 @@
+# Binaries for programs and plugins
+*.exe
+*.exe.config
+*.dll
+*.so
+*.dylib
+
+# Visual Studio files
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual Studio Code
+.vscode/
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/packages/*
+# except build/, which is used as an MSBuild target.
+!**/packages/build/
+# Uncomment if necessary however generally it will be regenerated when needed
+#!**/packages/repositories.config
+# NuGet v3's project.json files produces more ignoreable files
+*.nuget.props
+*.nuget.targets
+
+# Microsoft Azure Build Output
+csx/
+*.build.csdef
+
+# Microsoft Azure Emulator
+ecf/
+rcf/
+
+# Windows Azure Service Definition Schema
+*.svd
+*.cscfg
+
+# Windows Azure Service Runtime Information
+*.csxrole
+*.csxfg
+
+# Windows Store app package directory
+AppPackages/
+BundleArtifacts/
+
+# Visual Studio cache files
+# files ending in .cache can be ignored
+*.[Cc]ache
+# but keep track of directories ending in .cache
+!*.[Cc]ache/
+
+# Others
+ClientBin/
+~$*
+*~
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+*.pfx
+*.publishsettings
+node_modules/
+bower_components/
+
+# Rhino Plugin specific
+bin/
+obj/
+*.rhp
+
