@@ -33,31 +33,68 @@ namespace RHCoatingApp
                 // Step 1: Open the Coating Panel (if not already visible)
                 Panels.OpenPanel(CoatingPanel.PanelId);
 
-                // Step 2: Select 3D objects (Breps)
-                List<Brep> selectedBreps = SelectBreps(doc);
-                if (selectedBreps.Count == 0)
+                // Step 2: Select 3D objects (Breps) and collect object information
+                var selectedObjects = new List<ObjectInfo>();
+                double totalSurfaceArea_mm2 = 0;
+                
+                using (GetObject getObject = new GetObject())
+                {
+                    getObject.SetCommandPrompt("Select 3D objects for coating calculation");
+                    getObject.GeometryFilter = Rhino.DocObjects.ObjectType.Brep;
+                    getObject.SubObjectSelect = false;
+                    getObject.EnablePreSelect(false, true);
+                    getObject.GetMultiple(1, 0);
+
+                    if (getObject.CommandResult() != Result.Success)
+                    {
+                        RhinoApp.WriteLine("No valid 3D objects selected.");
+                        return getObject.CommandResult();
+                    }
+
+                    for (int i = 0; i < getObject.ObjectCount; i++)
+                    {
+                        Rhino.DocObjects.ObjRef objRef = getObject.Object(i);
+                        Brep brep = objRef.Brep();
+                        
+                        if (brep != null && brep.IsValid)
+                        {
+                            double surfaceArea = brep.GetArea();
+                            totalSurfaceArea_mm2 += surfaceArea;
+
+                            var objInfo = new ObjectInfo
+                            {
+                                Name = objRef.Object().Name ?? $"Object {i + 1}",
+                                SurfaceArea_mm2 = surfaceArea,
+                                ObjectId = objRef.ObjectId
+                            };
+                            selectedObjects.Add(objInfo);
+
+                            RhinoApp.WriteLine($"Added: {objInfo.Name} - {surfaceArea:F2} mm²");
+                        }
+                    }
+                }
+
+                if (selectedObjects.Count == 0)
                 {
                     RhinoApp.WriteLine("No valid 3D objects selected.");
                     return Result.Cancel;
                 }
 
-                // Step 3: Calculate total surface area
-                double totalSurfaceArea_mm2 = CalculateTotalSurfaceArea(selectedBreps);
-                RhinoApp.WriteLine($"Total surface area: {totalSurfaceArea_mm2:F2} mm²");
+                RhinoApp.WriteLine($"Total surface area: {totalSurfaceArea_mm2:F2} mm² ({selectedObjects.Count} objects)");
 
-                // Step 4: Update the panel with the calculated surface area
+                // Step 3: Update the panel with the calculated surface area and object information
                 var panel = Panels.GetPanel<CoatingPanel>(doc);
                 if (panel != null)
                 {
-                    panel.UpdateSurfaceArea(totalSurfaceArea_mm2);
+                    panel.UpdateSurfaceArea(totalSurfaceArea_mm2, selectedObjects);
                 }
                 else
                 {
                     RhinoApp.WriteLine("Warning: Could not find Coating Panel to update.");
                 }
 
-                // Step 5: Visualize selected surfaces
-                VisualizeSurfaces(doc, selectedBreps);
+                // Step 4: Visualize selected surfaces
+                doc.Views.Redraw();
 
                 RhinoApp.WriteLine("CoatingApp: Surface area calculated and panel updated.");
                 return Result.Success;
@@ -69,61 +106,6 @@ namespace RHCoatingApp
             }
         }
 
-        private List<Brep> SelectBreps(RhinoDoc doc)
-        {
-            List<Brep> breps = new List<Brep>();
-
-            using (GetObject getObject = new GetObject())
-            {
-                getObject.SetCommandPrompt("Select 3D objects for coating calculation");
-                getObject.GeometryFilter = Rhino.DocObjects.ObjectType.Brep;
-                getObject.SubObjectSelect = false;
-                getObject.EnablePreSelect(false, true);
-
-                while (true)
-                {
-                    GetResult result = getObject.Get();
-                    if (result == GetResult.Object)
-                    {
-                        Rhino.DocObjects.ObjRef objRef = getObject.Object(0);
-                        Brep brep = objRef.Brep();
-                        if (brep != null && brep.IsValid)
-                        {
-                            breps.Add(brep);
-                            RhinoApp.WriteLine($"Added object: {objRef.Object().Name ?? "Unnamed"}");
-                        }
-                    }
-                    else if (result == GetResult.Nothing)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        return breps; // Return what we have so far
-                    }
-                }
-            }
-
-            return breps;
-        }
-
-        private double CalculateTotalSurfaceArea(List<Brep> breps)
-        {
-            double totalArea = 0.0;
-            foreach (Brep brep in breps)
-            {
-                totalArea += brep.GetArea();
-            }
-            return totalArea;
-        }
-
-        private void VisualizeSurfaces(RhinoDoc doc, List<Brep> breps)
-        {
-            // Just redraw the view to highlight the selected objects
-            // The objects are already in the document, no need to add them again
-            doc.Views.Redraw();
-            RhinoApp.WriteLine($"Highlighted {breps.Count} objects in viewport for calculation.");
-        }
     }
 
     // Data classes for the coating calculation
@@ -146,5 +128,12 @@ namespace RHCoatingApp
         public double PrimerCost { get; set; }
         public double TopcoatCost { get; set; }
         public double TotalMaterialCost { get; set; }
+    }
+
+    public class ObjectInfo
+    {
+        public string Name { get; set; }
+        public double SurfaceArea_mm2 { get; set; }
+        public Guid ObjectId { get; set; }
     }
 }
