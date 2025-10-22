@@ -124,6 +124,12 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
   - GUID: `A1B2C3D4-E5F6-7890-ABCD-EF1234567890`
   - Registered as "Coating Panel" in Rhino
   - Loads default values from `CoatingConfigManager`
+  - Delegates export functionality to `CoatingExporter` class
+- **CoatingExporter.cs:** Export functionality for coating calculations
+  - Static class responsible for all export operations (TXT, CSV, XLSX)
+  - Separates export logic from UI logic for better maintainability
+  - Provides consistent export format across all file types
+  - Includes helper methods for material amount calculations
 - **CoatingConfigManager.cs:** Configuration management system
   - Loads settings from `CoatingConfig.json`
   - Provides singleton access to configuration data
