@@ -345,6 +345,7 @@ namespace RHCoatingApp
         public string SalesCost { get; set; }
         public string ProfitMargin { get; set; }
         public string FinalOfferPrice { get; set; }
+        public string FinalOfferPriceWithTime { get; set; }
     }
 
     public class TimeLabels
@@ -352,6 +353,8 @@ namespace RHCoatingApp
         public string EstimatedTime { get; set; }
         public string TotalEstimatedTime { get; set; }
         public string TimeFactor { get; set; }
+        public string TimePrice { get; set; }
+        public string TimeTotal { get; set; }
     }
 
     public class SectionLabels
