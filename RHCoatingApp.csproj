@@ -26,6 +26,7 @@
     <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.10" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
   
   <ItemGroup>
@@ -33,6 +34,13 @@
     <Compile Remove="RH_DB_Panel\**" />
     <EmbeddedResource Remove="RH_DB_Panel\**" />
     <None Remove="RH_DB_Panel\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy configuration file to output directory -->
+    <None Update="CoatingConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   
 </Project>

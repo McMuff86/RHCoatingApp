@@ -55,14 +55,21 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
 
 ## Additional Features
 
-### 6. **Material Database**
-- **Function:** Integrated database for common primers and topcoats with predefined properties (price in Fr./kg, consumption in g/m²).
+### 6. **Material Database & Configuration System**
+- **Function:** JSON-based configuration system for materials and default settings
+- **Configuration File:** `CoatingConfig.json` loaded from plugin directory
 - **Customization:** 
   - Pre-defined materials: Standard Primer, Premium Primer, Basic Topcoat, Premium Topcoat
   - User can edit consumption rates and prices directly in the UI
-  - Changes apply to current calculation without modifying database
-  - Dropdown selection automatically populates default values
-- **Benefit:** Speeds up configuration with sensible defaults while allowing full customization.
+  - Changes apply to current calculation without modifying config file
+  - Dropdown selection automatically populates default values from config
+  - Administrators can modify `CoatingConfig.json` to change defaults without recompiling
+- **Config Structure:**
+  - `ApplicationDefaults`: Indoor/Outdoor additive percentages
+  - `MaterialPrices`: Hardener and Thinner prices (Fr./kg)
+  - `Materials`: List of available materials with properties
+  - `DefaultSettings`: Time factor, default application type, default materials
+- **Benefit:** Flexible configuration management with easy customization for different regions or material suppliers.
 
 ### 7. **Surface Visualization**
 - **Function:** Highlights selected surfaces in the Rhino viewport with color to visually verify the calculation areas.
@@ -116,10 +123,21 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
   - Contains all material configuration UI and calculation logic
   - GUID: `A1B2C3D4-E5F6-7890-ABCD-EF1234567890`
   - Registered as "Coating Panel" in Rhino
+  - Loads default values from `CoatingConfigManager`
+- **CoatingConfigManager.cs:** Configuration management system
+  - Loads settings from `CoatingConfig.json`
+  - Provides singleton access to configuration data
+  - Falls back to hardcoded defaults if config file not found
+  - Thread-safe lazy loading of configuration
+- **CoatingConfig.json:** JSON configuration file
+  - Defines all default values for materials, prices, and percentages
+  - Copied to output directory during build
+  - Can be edited by administrators without recompiling
 - **RHCoatingAppPlugin.cs:** Plugin initialization and lifecycle management
   - Registers the dockable panel on plugin load
   - Uses `System.Drawing.SystemIcons.Application` as panel icon
 - **Data Classes:** `ApplicationType` enum, `MaterialConfig`, `MaterialInfo`, `CostCalculation`, `ObjectInfo` for structured data management
+- **Config Data Classes:** `CoatingConfigData`, `ApplicationDefaults`, `AdditiveSettings`, `MaterialPrices`, `MaterialDefinition`, `DefaultSettings` for configuration structure
 
 ### Unit Handling
 - **Internal Units:** All calculations use Rhino's native millimeters (mm) for surface areas

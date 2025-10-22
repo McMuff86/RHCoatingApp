@@ -1,0 +1,53 @@
+{
+  "ApplicationDefaults": {
+    "Indoor": {
+      "PrimerHardenerPercent": 6.0,
+      "PrimerThinnerPercent": 10.0,
+      "TopcoatHardenerPercent": 15.0,
+      "TopcoatThinnerPercent": 20.0
+    },
+    "Outdoor": {
+      "PrimerHardenerPercent": 8.0,
+      "PrimerThinnerPercent": 12.0,
+      "TopcoatHardenerPercent": 18.0,
+      "TopcoatThinnerPercent": 25.0
+    }
+  },
+  "MaterialPrices": {
+    "HardenerPricePerKg": 23.0,
+    "ThinnerPricePerKg": 9.0
+  },
+  "Materials": [
+    {
+      "Name": "Standard Primer",
+      "Type": "Primer",
+      "ConsumptionPerSqM": 200.0,
+      "PricePerKg": 25.0
+    },
+    {
+      "Name": "Premium Primer",
+      "Type": "Primer",
+      "ConsumptionPerSqM": 200.0,
+      "PricePerKg": 35.0
+    },
+    {
+      "Name": "Basic Topcoat",
+      "Type": "Topcoat",
+      "ConsumptionPerSqM": 200.0,
+      "PricePerKg": 20.0
+    },
+    {
+      "Name": "Premium Topcoat",
+      "Type": "Topcoat",
+      "ConsumptionPerSqM": 200.0,
+      "PricePerKg": 40.0
+    }
+  ],
+  "DefaultSettings": {
+    "TimeFactor": 0.5,
+    "DefaultApplicationType": "Indoor",
+    "DefaultPrimer": "Standard Primer",
+    "DefaultTopcoat": "Basic Topcoat"
+  }
+}
+
