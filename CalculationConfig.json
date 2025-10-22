@@ -1,0 +1,33 @@
+{
+  "CalculationFactors": {
+    "MaterialCostFactor": {
+      "Name": "Material Cost Factor",
+      "Percentage": 18.0,
+      "Description": "Additional costs for materials (surcharge)"
+    },
+    "ProductionCostFactor": {
+      "Name": "Production Cost Factor",
+      "Percentage": 120.0,
+      "Description": "Production and manufacturing costs"
+    },
+    "AdministrationCostFactor": {
+      "Name": "Administration Cost Factor",
+      "Percentage": 31.0,
+      "Description": "Administrative and overhead costs"
+    },
+    "SalesCostFactor": {
+      "Name": "Sales Cost Factor",
+      "Percentage": 5.0,
+      "Description": "Sales and distribution costs"
+    },
+    "ProfitMarginFactor": {
+      "Name": "Profit Margin Factor",
+      "Percentage": 19.0,
+      "Description": "Desired profit margin"
+    }
+  },
+  "DefaultSettings": {
+    "ShowDetailedCalculation": true,
+    "DefaultCalculationType": "Standard"
+  }
+}

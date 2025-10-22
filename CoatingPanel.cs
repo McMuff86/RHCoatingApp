@@ -6,6 +6,7 @@ using Eto.Drawing;
 using Rhino;
 using Rhino.UI;
 using ClosedXML.Excel;
+using System.Linq;
 
 namespace RHCoatingApp
 {
@@ -27,6 +28,8 @@ namespace RHCoatingApp
         private NumericStepper timeFactorStepper;
         private NumericStepper hardenerPriceStepper;
         private NumericStepper thinnerPriceStepper;
+        private NumericStepper primerCoatMultiplierStepper;
+        private NumericStepper topcoatCoatMultiplierStepper;
         private TextArea resultsTextArea;
         private Button selectObjectsButton;
         private Button clearObjectsButton;
@@ -52,6 +55,9 @@ namespace RHCoatingApp
         private StackLayout indoorAdditivePanel;
         private StackLayout outdoorAdditivePanel;
 
+        // Calculation factor controls
+        private Dictionary<string, NumericStepper> calculationFactorSteppers;
+
         private double surfaceArea_mm2;
         private List<ObjectInfo> selectedObjects;
         private Dictionary<string, MaterialInfo> materials;
@@ -59,6 +65,7 @@ namespace RHCoatingApp
         public MaterialConfig MaterialConfig { get; private set; }
         public CostCalculation Costs { get; private set; }
         public double EstimatedTime { get; private set; }
+        public CalculationResult CalculationResult { get; private set; }
 
         public CoatingPanel()
         {
@@ -207,7 +214,24 @@ namespace RHCoatingApp
 
         private void InitializeUI()
         {
-            // Create layout
+            // Create main splitter for horizontal division
+            var mainSplitter = new Splitter
+            {
+                Orientation = Orientation.Horizontal,
+                Panel1MinimumSize = 300,
+                Panel2MinimumSize = 200,
+                Position = 600,
+                Panel1 = CreateMaterialConfigurationPanel(),
+                Panel2 = CreateCalculationFactorsPanel()
+            };
+
+            // Set content for the panel
+            Content = mainSplitter;
+        }
+
+        private Scrollable CreateMaterialConfigurationPanel()
+        {
+            var scrollable = new Scrollable();
             var layout = new DynamicLayout();
             layout.Spacing = new Size(5, 5);
             layout.Padding = 10;
@@ -232,7 +256,7 @@ namespace RHCoatingApp
             surfaceAreaLabel = new Label 
             { 
                 Text = surfaceArea_mm2 > 0 
-                    ? $"{surfaceArea_mm2:F2} mm� ({surfaceArea_mm2 / 1000000:F4} m�)"
+                    ? $"{surfaceArea_mm2:F2} mm² ({surfaceArea_mm2 / 1000000:F4} m²)"
                     : "No objects selected",
                 Font = new Font(SystemFont.Default, 10)
             };
@@ -260,12 +284,12 @@ namespace RHCoatingApp
 
             // Primer consumption
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Consumption (g/m2):", Width = 120 });
+            layout.AddRow(new Label { Text = "Consumption (g/m²):", Width = 120 });
             primerConsumptionStepper = new NumericStepper
             {
                 MinValue = 0,
                 MaxValue = 1000,
-                Value = 200, // Default 200 g/m2
+                Value = 200, // Default 200 g/m²
                 DecimalPlaces = 1,
                 Increment = 10
             };
@@ -303,12 +327,12 @@ namespace RHCoatingApp
 
             // Topcoat consumption
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Consumption (g/m2):", Width = 120 });
+            layout.AddRow(new Label { Text = "Consumption (g/m²):", Width = 120 });
             topcoatConsumptionStepper = new NumericStepper
             {
                 MinValue = 0,
                 MaxValue = 1000,
-                Value = 200, // Default 200 g/m2
+                Value = 200, // Default 200 g/m²
                 DecimalPlaces = 1,
                 Increment = 10
             };
@@ -333,16 +357,49 @@ namespace RHCoatingApp
 
             // Time factor
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Time Factor (h/m2):", Width = 120 });
+            layout.AddRow(new Label { Text = "Time Factor (h/m²):", Width = 120 });
             timeFactorStepper = new NumericStepper
             {
-                MinValue = 0.1,
+                MinValue = 0.01,
                 MaxValue = 10.0,
                 Value = 0.5,
                 DecimalPlaces = 2,
                 Increment = 0.1
             };
             layout.AddRow(timeFactorStepper);
+            layout.EndHorizontal();
+
+            layout.AddSeparateRow(null);
+
+            // Load config defaults for multipliers
+            var defaultSettings = CoatingConfigManager.Config?.DefaultSettings;
+
+            // Primer coat multiplier
+            layout.BeginHorizontal();
+            layout.AddRow(new Label { Text = "Primer Coats:", Width = 120 });
+            primerCoatMultiplierStepper = new NumericStepper
+            {
+                MinValue = 1,
+                MaxValue = 10,
+                Value = defaultSettings?.DefaultPrimerCoatMultiplier ?? 1.0,
+                DecimalPlaces = 0,
+                Increment = 1
+            };
+            layout.AddRow(primerCoatMultiplierStepper);
+            layout.EndHorizontal();
+
+            // Topcoat coat multiplier
+            layout.BeginHorizontal();
+            layout.AddRow(new Label { Text = "Topcoat Coats:", Width = 120 });
+            topcoatCoatMultiplierStepper = new NumericStepper
+            {
+                MinValue = 1,
+                MaxValue = 10,
+                Value = defaultSettings?.DefaultTopcoatCoatMultiplier ?? 1.0,
+                DecimalPlaces = 0,
+                Increment = 1
+            };
+            layout.AddRow(topcoatCoatMultiplierStepper);
             layout.EndHorizontal();
             layout.EndVertical();
 
@@ -441,8 +498,71 @@ namespace RHCoatingApp
             exportButton.Enabled = false;
             layout.AddRow(exportButton);
 
-            // Set content for the panel
-            Content = layout;
+            // Set content for the scrollable panel
+            scrollable.Content = layout;
+            return scrollable;
+        }
+
+        private Scrollable CreateCalculationFactorsPanel()
+        {
+            var scrollable = new Scrollable();
+            var layout = new DynamicLayout();
+            layout.Spacing = new Size(5, 5);
+            layout.Padding = 10;
+
+            // Initialize calculation factor steppers dictionary
+            calculationFactorSteppers = new Dictionary<string, NumericStepper>();
+
+            // Calculation factors section
+            layout.BeginVertical();
+            layout.AddRow(new Label { Text = "Calculation Factors:", Font = SystemFonts.Bold() });
+
+            // Load calculation factors from config
+            var calcConfig = CalculationConfigManager.Config;
+            if (calcConfig?.CalculationFactors != null)
+            {
+                foreach (var factor in calcConfig.CalculationFactors)
+                {
+                    // Factor name and description
+                    layout.BeginHorizontal();
+                    layout.AddRow(new Label { Text = $"{factor.Value.Name}:", Width = 180 });
+                    layout.AddRow(new Label
+                    {
+                        Text = factor.Value.Description,
+                        Font = new Font(SystemFont.Default, 8),
+                        TextColor = Colors.Gray,
+                        Wrap = WrapMode.Word
+                    });
+                    layout.EndHorizontal();
+
+                    // Factor percentage input
+                    layout.BeginHorizontal();
+                    layout.AddRow(new Label { Text = "Percentage:", Width = 180 });
+                    var stepper = new NumericStepper
+                    {
+                        MinValue = 0,
+                        MaxValue = 1000,
+                        Value = factor.Value.Percentage,
+                        DecimalPlaces = 1,
+                        Increment = 1,
+                        ToolTip = factor.Value.Description
+                    };
+                    stepper.ValueChanged += (sender, e) => OnCalculationFactorChanged(factor.Key, stepper.Value);
+                    calculationFactorSteppers.Add(factor.Key, stepper);
+                    layout.AddRow(stepper);
+                    layout.AddRow(new Label { Text = "%" });
+                    layout.EndHorizontal();
+
+                    layout.AddSeparateRow(null);
+                }
+            }
+
+            layout.AddSeparateRow(null);
+            layout.AddRow(new Label { Text = "Adjust percentages to calculate final offer price", Font = new Font(SystemFont.Default, 9) });
+            layout.EndVertical();
+
+            scrollable.Content = layout;
+            return scrollable;
         }
 
         private StackLayout CreateIndoorAdditivePanel()
@@ -669,7 +789,9 @@ namespace RHCoatingApp
                     TopcoatHardenerPercent = topcoatHardenerPercent,
                     TopcoatThinnerPercent = topcoatThinnerPercent,
                     HardenerPricePerKg = hardenerPriceStepper.Value,
-                    ThinnerPricePerKg = thinnerPriceStepper.Value
+                    ThinnerPricePerKg = thinnerPriceStepper.Value,
+                    PrimerCoatMultiplier = primerCoatMultiplierStepper.Value,
+                    TopcoatCoatMultiplier = topcoatCoatMultiplierStepper.Value
                 };
 
                 // Calculate costs
@@ -678,8 +800,12 @@ namespace RHCoatingApp
                 // Calculate time
                 EstimatedTime = EstimateTime(surfaceArea_mm2, MaterialConfig.TimeFactor);
 
-                // Display results
-                DisplayResults();
+                // Calculate final offer with current factors
+                var currentFactors = GetCurrentCalculationFactors();
+                CalculationResult = CalculateFinalOffer(Costs, currentFactors);
+
+                // Display results with calculation
+                DisplayResultsWithCalculation();
 
                 // Enable export button
                 exportButton.Enabled = true;
@@ -697,8 +823,8 @@ namespace RHCoatingApp
 
             if (config.Primer != null)
             {
-                // Base primer calculation
-                double primerGrams = surfaceArea_m2 * config.Primer.ConsumptionPerSqM;
+                // Base primer calculation with coat multiplier
+                double primerGrams = surfaceArea_m2 * config.Primer.ConsumptionPerSqM * config.PrimerCoatMultiplier;
                 double primerKg = primerGrams / 1000.0;
                 costs.PrimerCost = primerKg * config.Primer.PricePerKg;
                 
@@ -717,8 +843,8 @@ namespace RHCoatingApp
 
             if (config.Topcoat != null)
             {
-                // Base topcoat calculation
-                double topcoatGrams = surfaceArea_m2 * config.Topcoat.ConsumptionPerSqM;
+                // Base topcoat calculation with coat multiplier
+                double topcoatGrams = surfaceArea_m2 * config.Topcoat.ConsumptionPerSqM * config.TopcoatCoatMultiplier;
                 double topcoatKg = topcoatGrams / 1000.0;
                 costs.TopcoatCost = topcoatKg * config.Topcoat.PricePerKg;
                 
@@ -750,6 +876,10 @@ namespace RHCoatingApp
             results.AppendLine("=== COATING CALCULATION RESULTS ===");
             results.AppendLine();
             results.AppendLine($"Application Type: {MaterialConfig.ApplicationType}");
+            if (MaterialConfig.Primer != null || MaterialConfig.Topcoat != null)
+            {
+                results.AppendLine($"Coat Multipliers: Primer={MaterialConfig.PrimerCoatMultiplier:F0}x, Topcoat={MaterialConfig.TopcoatCoatMultiplier:F0}x");
+            }
             results.AppendLine();
 
             // Display individual objects
@@ -771,27 +901,27 @@ namespace RHCoatingApp
                     
                     if (MaterialConfig.Primer != null)
                     {
-                        double primerGrams = objArea_m2 * MaterialConfig.Primer.ConsumptionPerSqM;
+                        double primerGrams = objArea_m2 * MaterialConfig.Primer.ConsumptionPerSqM * MaterialConfig.PrimerCoatMultiplier;
                         double primerKg = primerGrams / 1000.0;
                         double primerHardenerGrams = primerGrams * (MaterialConfig.PrimerHardenerPercent / 100.0);
                         double primerHardenerKg = primerHardenerGrams / 1000.0;
                         double primerThinnerGrams = primerGrams * (MaterialConfig.PrimerThinnerPercent / 100.0);
                         double primerThinnerKg = primerThinnerGrams / 1000.0;
-                        
-                        results.AppendLine($"  Primer: {primerGrams:F1} g ({primerKg:F3} kg) - Fr. {objCosts.PrimerCost:F2}");
+
+                        results.AppendLine($"  Primer ({MaterialConfig.PrimerCoatMultiplier:F0}x coats): {primerGrams:F1} g ({primerKg:F3} kg) - Fr. {objCosts.PrimerCost:F2}");
                         results.AppendLine($"    + Hardener ({MaterialConfig.PrimerHardenerPercent:F1}%): {primerHardenerGrams:F1} g ({primerHardenerKg:F3} kg) - Fr. {objCosts.PrimerHardenerCost:F2}");
                         results.AppendLine($"    + Thinner ({MaterialConfig.PrimerThinnerPercent:F1}%): {primerThinnerGrams:F1} g ({primerThinnerKg:F3} kg) - Fr. {objCosts.PrimerThinnerCost:F2}");
                     }
                     if (MaterialConfig.Topcoat != null)
                     {
-                        double topcoatGrams = objArea_m2 * MaterialConfig.Topcoat.ConsumptionPerSqM;
+                        double topcoatGrams = objArea_m2 * MaterialConfig.Topcoat.ConsumptionPerSqM * MaterialConfig.TopcoatCoatMultiplier;
                         double topcoatKg = topcoatGrams / 1000.0;
                         double topcoatHardenerGrams = topcoatGrams * (MaterialConfig.TopcoatHardenerPercent / 100.0);
                         double topcoatHardenerKg = topcoatHardenerGrams / 1000.0;
                         double topcoatThinnerGrams = topcoatGrams * (MaterialConfig.TopcoatThinnerPercent / 100.0);
                         double topcoatThinnerKg = topcoatThinnerGrams / 1000.0;
-                        
-                        results.AppendLine($"  Topcoat: {topcoatGrams:F1} g ({topcoatKg:F3} kg) - Fr. {objCosts.TopcoatCost:F2}");
+
+                        results.AppendLine($"  Topcoat ({MaterialConfig.TopcoatCoatMultiplier:F0}x coats): {topcoatGrams:F1} g ({topcoatKg:F3} kg) - Fr. {objCosts.TopcoatCost:F2}");
                         results.AppendLine($"    + Hardener ({MaterialConfig.TopcoatHardenerPercent:F1}%): {topcoatHardenerGrams:F1} g ({topcoatHardenerKg:F3} kg) - Fr. {objCosts.TopcoatHardenerCost:F2}");
                         results.AppendLine($"    + Thinner ({MaterialConfig.TopcoatThinnerPercent:F1}%): {topcoatThinnerGrams:F1} g ({topcoatThinnerKg:F3} kg) - Fr. {objCosts.TopcoatThinnerCost:F2}");
                     }
@@ -816,15 +946,16 @@ namespace RHCoatingApp
             
             if (MaterialConfig.Primer != null)
             {
-                double totalPrimerGrams = totalArea_m2 * MaterialConfig.Primer.ConsumptionPerSqM;
+                double totalPrimerGrams = totalArea_m2 * MaterialConfig.Primer.ConsumptionPerSqM * MaterialConfig.PrimerCoatMultiplier;
                 double totalPrimerKg = totalPrimerGrams / 1000.0;
                 double totalPrimerHardenerGrams = totalPrimerGrams * (MaterialConfig.PrimerHardenerPercent / 100.0);
                 double totalPrimerHardenerKg = totalPrimerHardenerGrams / 1000.0;
                 double totalPrimerThinnerGrams = totalPrimerGrams * (MaterialConfig.PrimerThinnerPercent / 100.0);
                 double totalPrimerThinnerKg = totalPrimerThinnerGrams / 1000.0;
-                
+
                 results.AppendLine($"Primer: {MaterialConfig.Primer.Name}");
                 results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Coats: {MaterialConfig.PrimerCoatMultiplier:F0}x");
                 results.AppendLine($"  Total Amount: {totalPrimerGrams:F1} g ({totalPrimerKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Primer.PricePerKg:F2}/kg");
                 results.AppendLine($"  Total Cost: Fr. {Costs.PrimerCost:F2}");
@@ -835,15 +966,16 @@ namespace RHCoatingApp
 
             if (MaterialConfig.Topcoat != null)
             {
-                double totalTopcoatGrams = totalArea_m2 * MaterialConfig.Topcoat.ConsumptionPerSqM;
+                double totalTopcoatGrams = totalArea_m2 * MaterialConfig.Topcoat.ConsumptionPerSqM * MaterialConfig.TopcoatCoatMultiplier;
                 double totalTopcoatKg = totalTopcoatGrams / 1000.0;
                 double totalTopcoatHardenerGrams = totalTopcoatGrams * (MaterialConfig.TopcoatHardenerPercent / 100.0);
                 double totalTopcoatHardenerKg = totalTopcoatHardenerGrams / 1000.0;
                 double totalTopcoatThinnerGrams = totalTopcoatGrams * (MaterialConfig.TopcoatThinnerPercent / 100.0);
                 double totalTopcoatThinnerKg = totalTopcoatThinnerGrams / 1000.0;
-                
+
                 results.AppendLine($"Topcoat: {MaterialConfig.Topcoat.Name}");
                 results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Coats: {MaterialConfig.TopcoatCoatMultiplier:F0}x");
                 results.AppendLine($"  Total Amount: {totalTopcoatGrams:F1} g ({totalTopcoatKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Topcoat.PricePerKg:F2}/kg");
                 results.AppendLine($"  Total Cost: Fr. {Costs.TopcoatCost:F2}");
@@ -884,7 +1016,9 @@ namespace RHCoatingApp
                         selectedObjects,
                         MaterialConfig,
                         Costs,
-                        EstimatedTime
+                        EstimatedTime,
+                        CalculationResult,
+                        calculationFactorSteppers?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value)
                     );
 
                     MessageBox.Show($"Results exported successfully to:\n{saveDialog.FileName}", 
@@ -898,5 +1032,252 @@ namespace RHCoatingApp
         }
 
         // Export methods moved to CoatingExporter.cs for better maintainability
+
+        private void OnCalculationFactorChanged(string factorKey, double newValue)
+        {
+            // Update the calculation if we have material config and costs
+            if (MaterialConfig != null && Costs != null)
+            {
+                // Recalculate with new factor values
+                CalculationResult = CalculateFinalOffer(Costs, GetCurrentCalculationFactors());
+
+                // Update results display if available
+                if (resultsTextArea != null)
+                {
+                    DisplayResultsWithCalculation();
+                }
+            }
+        }
+
+        private Dictionary<string, double> GetCurrentCalculationFactors()
+        {
+            var factors = new Dictionary<string, double>();
+            if (calculationFactorSteppers != null)
+            {
+                foreach (var kvp in calculationFactorSteppers)
+                {
+                    factors.Add(kvp.Key, kvp.Value.Value);
+                }
+            }
+            return factors;
+        }
+
+        private CalculationResult CalculateFinalOffer(CostCalculation baseCosts, Dictionary<string, double> factors)
+        {
+            double baseMaterialCost = baseCosts.TotalMaterialCost;
+
+            // Start with material costs
+            double currentCost = baseMaterialCost;
+
+            var result = new CalculationResult
+            {
+                BaseMaterialCost = baseMaterialCost,
+                MaterialCostWithSurcharge = currentCost
+            };
+
+            // Apply each factor
+            if (factors.ContainsKey("MaterialCostFactor"))
+            {
+                double materialFactor = factors["MaterialCostFactor"] / 100.0;
+                double surcharge = currentCost * materialFactor;
+                result.MaterialSurcharge = surcharge;
+                currentCost += surcharge;
+            }
+
+            if (factors.ContainsKey("ProductionCostFactor"))
+            {
+                double productionFactor = factors["ProductionCostFactor"] / 100.0;
+                double productionCost = currentCost * productionFactor;
+                result.ProductionCost = productionCost;
+                currentCost += productionCost;
+            }
+
+            if (factors.ContainsKey("AdministrationCostFactor"))
+            {
+                double adminFactor = factors["AdministrationCostFactor"] / 100.0;
+                double adminCost = currentCost * adminFactor;
+                result.AdministrationCost = adminCost;
+                currentCost += adminCost;
+            }
+
+            if (factors.ContainsKey("SalesCostFactor"))
+            {
+                double salesFactor = factors["SalesCostFactor"] / 100.0;
+                double salesCost = currentCost * salesFactor;
+                result.SalesCost = salesCost;
+                currentCost += salesCost;
+            }
+
+            if (factors.ContainsKey("ProfitMarginFactor"))
+            {
+                double profitFactor = factors["ProfitMarginFactor"] / 100.0;
+                double profitAmount = currentCost * profitFactor;
+                result.ProfitMargin = profitAmount;
+                currentCost += profitAmount;
+            }
+
+            result.FinalOfferPrice = currentCost;
+            result.AppliedFactors = factors;
+
+            return result;
+        }
+
+        private void DisplayResultsWithCalculation()
+        {
+            if (CalculationResult == null)
+            {
+                DisplayResults();
+                return;
+            }
+
+            var results = new System.Text.StringBuilder();
+            results.AppendLine("=== COATING CALCULATION RESULTS ===");
+            results.AppendLine();
+            results.AppendLine($"Application Type: {MaterialConfig.ApplicationType}");
+            if (MaterialConfig.Primer != null || MaterialConfig.Topcoat != null)
+            {
+                results.AppendLine($"Coat Multipliers: Primer={MaterialConfig.PrimerCoatMultiplier:F0}x, Topcoat={MaterialConfig.TopcoatCoatMultiplier:F0}x");
+            }
+            results.AppendLine();
+
+            // Display individual objects (same as before)
+            if (selectedObjects != null && selectedObjects.Count > 0)
+            {
+                results.AppendLine("INDIVIDUAL OBJECTS:");
+                results.AppendLine();
+
+                for (int i = 0; i < selectedObjects.Count; i++)
+                {
+                    var obj = selectedObjects[i];
+                    results.AppendLine($"Object {i + 1}: {obj.Name}");
+                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm� ({obj.SurfaceArea_mm2 / 1000000:F4} m�)");
+
+                    // Calculate costs and material amounts for this individual object
+                    double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
+                    var objCosts = CalculateCosts(obj.SurfaceArea_mm2, MaterialConfig);
+                    var objTime = EstimateTime(obj.SurfaceArea_mm2, MaterialConfig.TimeFactor);
+
+                    if (MaterialConfig.Primer != null)
+                    {
+                        double primerGrams = objArea_m2 * MaterialConfig.Primer.ConsumptionPerSqM * MaterialConfig.PrimerCoatMultiplier;
+                        double primerKg = primerGrams / 1000.0;
+                        double primerHardenerGrams = primerGrams * (MaterialConfig.PrimerHardenerPercent / 100.0);
+                        double primerHardenerKg = primerHardenerGrams / 1000.0;
+                        double primerThinnerGrams = primerGrams * (MaterialConfig.PrimerThinnerPercent / 100.0);
+                        double primerThinnerKg = primerThinnerGrams / 1000.0;
+
+                        results.AppendLine($"  Primer ({MaterialConfig.PrimerCoatMultiplier:F0}x coats): {primerGrams:F1} g ({primerKg:F3} kg) - Fr. {objCosts.PrimerCost:F2}");
+                        results.AppendLine($"    + Hardener ({MaterialConfig.PrimerHardenerPercent:F1}%): {primerHardenerGrams:F1} g ({primerHardenerKg:F3} kg) - Fr. {objCosts.PrimerHardenerCost:F2}");
+                        results.AppendLine($"    + Thinner ({MaterialConfig.PrimerThinnerPercent:F1}%): {primerThinnerGrams:F1} g ({primerThinnerKg:F3} kg) - Fr. {objCosts.PrimerThinnerCost:F2}");
+                    }
+                    if (MaterialConfig.Topcoat != null)
+                    {
+                        double topcoatGrams = objArea_m2 * MaterialConfig.Topcoat.ConsumptionPerSqM * MaterialConfig.TopcoatCoatMultiplier;
+                        double topcoatKg = topcoatGrams / 1000.0;
+                        double topcoatHardenerGrams = topcoatGrams * (MaterialConfig.TopcoatHardenerPercent / 100.0);
+                        double topcoatHardenerKg = topcoatHardenerGrams / 1000.0;
+                        double topcoatThinnerGrams = topcoatGrams * (MaterialConfig.TopcoatThinnerPercent / 100.0);
+                        double topcoatThinnerKg = topcoatThinnerGrams / 1000.0;
+
+                        results.AppendLine($"  Topcoat ({MaterialConfig.TopcoatCoatMultiplier:F0}x coats): {topcoatGrams:F1} g ({topcoatKg:F3} kg) - Fr. {objCosts.TopcoatCost:F2}");
+                        results.AppendLine($"    + Hardener ({MaterialConfig.TopcoatHardenerPercent:F1}%): {topcoatHardenerGrams:F1} g ({topcoatHardenerKg:F3} kg) - Fr. {objCosts.TopcoatHardenerCost:F2}");
+                        results.AppendLine($"    + Thinner ({MaterialConfig.TopcoatThinnerPercent:F1}%): {topcoatThinnerGrams:F1} g ({topcoatThinnerKg:F3} kg) - Fr. {objCosts.TopcoatThinnerCost:F2}");
+                    }
+                    results.AppendLine($"  Total Material Cost: Fr. {objCosts.TotalMaterialCost:F2}");
+                    results.AppendLine($"  Estimated Time: {objTime:F2} hours");
+                    results.AppendLine();
+                }
+
+                results.AppendLine("---------------------------------");
+                results.AppendLine();
+            }
+
+            // Display summary (same as before)
+            results.AppendLine("SUMMARY:");
+            results.AppendLine();
+            results.AppendLine($"Total Objects: {selectedObjects.Count}");
+            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mm�");
+            results.AppendLine($"                    ({surfaceArea_mm2 / 1000000:F4} m�)");
+            results.AppendLine();
+
+            double totalArea_m2 = surfaceArea_mm2 / 1000000.0;
+
+            if (MaterialConfig.Primer != null)
+            {
+                double totalPrimerGrams = totalArea_m2 * MaterialConfig.Primer.ConsumptionPerSqM * MaterialConfig.PrimerCoatMultiplier;
+                double totalPrimerKg = totalPrimerGrams / 1000.0;
+                double totalPrimerHardenerGrams = totalPrimerGrams * (MaterialConfig.PrimerHardenerPercent / 100.0);
+                double totalPrimerHardenerKg = totalPrimerHardenerGrams / 1000.0;
+                double totalPrimerThinnerGrams = totalPrimerGrams * (MaterialConfig.PrimerThinnerPercent / 100.0);
+                double totalPrimerThinnerKg = totalPrimerThinnerGrams / 1000.0;
+
+                results.AppendLine($"Primer: {MaterialConfig.Primer.Name}");
+                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Coats: {MaterialConfig.PrimerCoatMultiplier:F0}x");
+                results.AppendLine($"  Total Amount: {totalPrimerGrams:F1} g ({totalPrimerKg:F3} kg)");
+                results.AppendLine($"  Price: Fr. {MaterialConfig.Primer.PricePerKg:F2}/kg");
+                results.AppendLine($"  Total Cost: Fr. {Costs.PrimerCost:F2}");
+                results.AppendLine($"  Hardener ({MaterialConfig.PrimerHardenerPercent:F1}%): {totalPrimerHardenerGrams:F1} g ({totalPrimerHardenerKg:F3} kg) - Fr. {Costs.PrimerHardenerCost:F2}");
+                results.AppendLine($"  Thinner ({MaterialConfig.PrimerThinnerPercent:F1}%): {totalPrimerThinnerGrams:F1} g ({totalPrimerThinnerKg:F3} kg) - Fr. {Costs.PrimerThinnerCost:F2}");
+                results.AppendLine();
+            }
+
+            if (MaterialConfig.Topcoat != null)
+            {
+                double totalTopcoatGrams = totalArea_m2 * MaterialConfig.Topcoat.ConsumptionPerSqM * MaterialConfig.TopcoatCoatMultiplier;
+                double totalTopcoatKg = totalTopcoatGrams / 1000.0;
+                double totalTopcoatHardenerGrams = totalTopcoatGrams * (MaterialConfig.TopcoatHardenerPercent / 100.0);
+                double totalTopcoatHardenerKg = totalTopcoatHardenerGrams / 1000.0;
+                double totalTopcoatThinnerGrams = totalTopcoatGrams * (MaterialConfig.TopcoatThinnerPercent / 100.0);
+                double totalTopcoatThinnerKg = totalTopcoatThinnerGrams / 1000.0;
+
+                results.AppendLine($"Topcoat: {MaterialConfig.Topcoat.Name}");
+                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Coats: {MaterialConfig.TopcoatCoatMultiplier:F0}x");
+                results.AppendLine($"  Total Amount: {totalTopcoatGrams:F1} g ({totalTopcoatKg:F3} kg)");
+                results.AppendLine($"  Price: Fr. {MaterialConfig.Topcoat.PricePerKg:F2}/kg");
+                results.AppendLine($"  Total Cost: Fr. {Costs.TopcoatCost:F2}");
+                results.AppendLine($"  Hardener ({MaterialConfig.TopcoatHardenerPercent:F1}%): {totalTopcoatHardenerGrams:F1} g ({totalTopcoatHardenerKg:F3} kg) - Fr. {Costs.TopcoatHardenerCost:F2}");
+                results.AppendLine($"  Thinner ({MaterialConfig.TopcoatThinnerPercent:F1}%): {totalTopcoatThinnerGrams:F1} g ({totalTopcoatThinnerKg:F3} kg) - Fr. {Costs.TopcoatThinnerCost:F2}");
+                results.AppendLine();
+            }
+
+            results.AppendLine($"Total Material Cost: Fr. {Costs.TotalMaterialCost:F2}");
+            results.AppendLine($"Total Estimated Time: {EstimatedTime:F2} hours");
+            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/m�");
+
+            // Add calculation breakdown
+            results.AppendLine();
+            results.AppendLine("=== OFFER CALCULATION ===");
+            results.AppendLine();
+            results.AppendLine($"Base Material Cost:     Fr. {CalculationResult.BaseMaterialCost:F2}");
+            if (CalculationResult.MaterialSurcharge > 0 && CalculationResult.AppliedFactors.TryGetValue("MaterialCostFactor", out double materialFactor))
+                results.AppendLine($"Material Surcharge ({materialFactor:F1}%): Fr. {CalculationResult.MaterialSurcharge:F2}");
+            if (CalculationResult.ProductionCost > 0 && CalculationResult.AppliedFactors.TryGetValue("ProductionCostFactor", out double productionFactor))
+                results.AppendLine($"Production Cost ({productionFactor:F1}%):    Fr. {CalculationResult.ProductionCost:F2}");
+            if (CalculationResult.AdministrationCost > 0 && CalculationResult.AppliedFactors.TryGetValue("AdministrationCostFactor", out double adminFactor))
+                results.AppendLine($"Administration Cost ({adminFactor:F1}%): Fr. {CalculationResult.AdministrationCost:F2}");
+            if (CalculationResult.SalesCost > 0 && CalculationResult.AppliedFactors.TryGetValue("SalesCostFactor", out double salesFactor))
+                results.AppendLine($"Sales Cost ({salesFactor:F1}%):         Fr. {CalculationResult.SalesCost:F2}");
+            if (CalculationResult.ProfitMargin > 0 && CalculationResult.AppliedFactors.TryGetValue("ProfitMarginFactor", out double profitFactor))
+                results.AppendLine($"Profit Margin ({profitFactor:F1}%):      Fr. {CalculationResult.ProfitMargin:F2}");
+            results.AppendLine();
+            results.AppendLine($"FINAL OFFER PRICE: Fr. {CalculationResult.FinalOfferPrice:F2}");
+
+            resultsTextArea.Text = results.ToString();
+        }
+    }
+
+    public class CalculationResult
+    {
+        public double BaseMaterialCost { get; set; }
+        public double MaterialSurcharge { get; set; }
+        public double ProductionCost { get; set; }
+        public double AdministrationCost { get; set; }
+        public double SalesCost { get; set; }
+        public double ProfitMargin { get; set; }
+        public double FinalOfferPrice { get; set; }
+        public double MaterialCostWithSurcharge { get; set; }
+        public Dictionary<string, double> AppliedFactors { get; set; }
     }
 }

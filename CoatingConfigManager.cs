@@ -113,7 +113,9 @@ namespace RHCoatingApp
                     TimeFactor = 0.5,
                     DefaultApplicationType = "Indoor",
                     DefaultPrimer = "Standard Primer",
-                    DefaultTopcoat = "Basic Topcoat"
+                    DefaultTopcoat = "Basic Topcoat",
+                    DefaultPrimerCoatMultiplier = 1.0,
+                    DefaultTopcoatCoatMultiplier = 1.0
                 }
             };
         }
@@ -174,6 +176,8 @@ namespace RHCoatingApp
         public string DefaultApplicationType { get; set; }
         public string DefaultPrimer { get; set; }
         public string DefaultTopcoat { get; set; }
+        public double DefaultPrimerCoatMultiplier { get; set; }
+        public double DefaultTopcoatCoatMultiplier { get; set; }
     }
 
     #endregion

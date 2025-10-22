@@ -47,7 +47,9 @@
     "TimeFactor": 0.5,
     "DefaultApplicationType": "Indoor",
     "DefaultPrimer": "Standard Primer",
-    "DefaultTopcoat": "Basic Topcoat"
+    "DefaultTopcoat": "Basic Topcoat",
+    "DefaultPrimerCoatMultiplier": 1.0,
+    "DefaultTopcoatCoatMultiplier": 1.0
   }
 }
 

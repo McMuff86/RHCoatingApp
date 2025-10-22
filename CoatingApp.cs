@@ -121,16 +121,20 @@ namespace RHCoatingApp
         public MaterialInfo Topcoat { get; set; }
         public double TimeFactor { get; set; } = 0.5; // hours per square meter
         public ApplicationType ApplicationType { get; set; } = ApplicationType.Indoor;
-        
+
         // Percentages for additives
         public double PrimerHardenerPercent { get; set; } = 6.0;
         public double PrimerThinnerPercent { get; set; } = 10.0;
         public double TopcoatHardenerPercent { get; set; } = 15.0;
         public double TopcoatThinnerPercent { get; set; } = 20.0;
-        
+
         // Prices for additives (Fr./kg)
         public double HardenerPricePerKg { get; set; } = 23.0;
         public double ThinnerPricePerKg { get; set; } = 9.0;
+
+        // Coat multipliers for multiple applications
+        public double PrimerCoatMultiplier { get; set; } = 1.0; // Default: 1 coat
+        public double TopcoatCoatMultiplier { get; set; } = 1.0; // Default: 1 coat
     }
 
     public class MaterialInfo
