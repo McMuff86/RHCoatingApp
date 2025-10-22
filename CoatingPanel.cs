@@ -260,12 +260,12 @@ namespace RHCoatingApp
 
             // Primer consumption
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Consumption (g/m�):", Width = 120 });
+            layout.AddRow(new Label { Text = "Consumption (g/m2):", Width = 120 });
             primerConsumptionStepper = new NumericStepper
             {
                 MinValue = 0,
                 MaxValue = 1000,
-                Value = 200, // Default 200 g/m�
+                Value = 200, // Default 200 g/m2
                 DecimalPlaces = 1,
                 Increment = 10
             };
@@ -303,12 +303,12 @@ namespace RHCoatingApp
 
             // Topcoat consumption
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Consumption (g/m�):", Width = 120 });
+            layout.AddRow(new Label { Text = "Consumption (g/m2):", Width = 120 });
             topcoatConsumptionStepper = new NumericStepper
             {
                 MinValue = 0,
                 MaxValue = 1000,
-                Value = 200, // Default 200 g/m�
+                Value = 200, // Default 200 g/m2
                 DecimalPlaces = 1,
                 Increment = 10
             };
@@ -333,7 +333,7 @@ namespace RHCoatingApp
 
             // Time factor
             layout.BeginHorizontal();
-            layout.AddRow(new Label { Text = "Time Factor (h/m�):", Width = 120 });
+            layout.AddRow(new Label { Text = "Time Factor (h/m2):", Width = 120 });
             timeFactorStepper = new NumericStepper
             {
                 MinValue = 0.1,
