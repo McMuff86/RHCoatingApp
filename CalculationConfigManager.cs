@@ -126,7 +126,7 @@ namespace RHCoatingApp
                         {
                             Key = "ProfitMarginFactor",
                             Name = "Profit Margin Factor",
-                            Percentage = 19.0,
+                            Percentage = 20.0,
                             Description = "Desired profit margin"
                         }
                     }

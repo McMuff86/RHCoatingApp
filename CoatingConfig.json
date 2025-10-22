@@ -7,10 +7,10 @@
       "TopcoatThinnerPercent": 20.0
     },
     "Outdoor": {
-      "PrimerHardenerPercent": 8.0,
+      "PrimerHardenerPercent": 6.0,
       "PrimerThinnerPercent": 12.0,
-      "TopcoatHardenerPercent": 18.0,
-      "TopcoatThinnerPercent": 25.0
+      "TopcoatHardenerPercent": 15.0,
+      "TopcoatThinnerPercent": 20.0
     }
   },
   "MaterialPrices": {

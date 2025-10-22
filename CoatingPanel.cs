@@ -87,7 +87,7 @@ namespace RHCoatingApp
             {
                 string objectCount = selectedObjects.Count > 0 ? $"{selectedObjects.Count} object(s)" : "No objects";
                 surfaceAreaLabel.Text = surfaceArea_mm2 > 0
-                    ? $"{objectCount} - {surfaceArea_mm2:F2} mm� ({surfaceArea_mm2 / 1000000:F4} m�)"
+                    ? $"{objectCount} - {surfaceArea_mm2:F2} mm² ({surfaceArea_mm2 / 1000000:F4} m²)"
                     : "No objects selected";
             }
             // Reset results
@@ -892,7 +892,7 @@ namespace RHCoatingApp
                 {
                     var obj = selectedObjects[i];
                     results.AppendLine($"Object {i + 1}: {obj.Name}");
-                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm� ({obj.SurfaceArea_mm2 / 1000000:F4} m�)");
+                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm² ({obj.SurfaceArea_mm2 / 1000000:F4} m²)");
                     
                     // Calculate costs and material amounts for this individual object
                     double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
@@ -938,7 +938,7 @@ namespace RHCoatingApp
             results.AppendLine("SUMMARY:");
             results.AppendLine();
             results.AppendLine($"Total Objects: {selectedObjects.Count}");
-            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mm�");
+            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mm²");
             results.AppendLine($"                    ({surfaceArea_mm2 / 1000000:F4} m�)");
             results.AppendLine();
 
@@ -954,7 +954,7 @@ namespace RHCoatingApp
                 double totalPrimerThinnerKg = totalPrimerThinnerGrams / 1000.0;
 
                 results.AppendLine($"Primer: {MaterialConfig.Primer.Name}");
-                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m²");
                 results.AppendLine($"  Coats: {MaterialConfig.PrimerCoatMultiplier:F0}x");
                 results.AppendLine($"  Total Amount: {totalPrimerGrams:F1} g ({totalPrimerKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Primer.PricePerKg:F2}/kg");
@@ -974,7 +974,7 @@ namespace RHCoatingApp
                 double totalTopcoatThinnerKg = totalTopcoatThinnerGrams / 1000.0;
 
                 results.AppendLine($"Topcoat: {MaterialConfig.Topcoat.Name}");
-                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m²");
                 results.AppendLine($"  Coats: {MaterialConfig.TopcoatCoatMultiplier:F0}x");
                 results.AppendLine($"  Total Amount: {totalTopcoatGrams:F1} g ({totalTopcoatKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Topcoat.PricePerKg:F2}/kg");
@@ -986,7 +986,7 @@ namespace RHCoatingApp
 
             results.AppendLine($"Total Material Cost: Fr. {Costs.TotalMaterialCost:F2}");
             results.AppendLine($"Total Estimated Time: {EstimatedTime:F2} hours");
-            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/m�");
+            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/m²");
 
             resultsTextArea.Text = results.ToString();
         }
@@ -1150,7 +1150,7 @@ namespace RHCoatingApp
                 {
                     var obj = selectedObjects[i];
                     results.AppendLine($"Object {i + 1}: {obj.Name}");
-                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm� ({obj.SurfaceArea_mm2 / 1000000:F4} m�)");
+                    results.AppendLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm² ({obj.SurfaceArea_mm2 / 1000000:F4} m²)");
 
                     // Calculate costs and material amounts for this individual object
                     double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
@@ -1196,8 +1196,8 @@ namespace RHCoatingApp
             results.AppendLine("SUMMARY:");
             results.AppendLine();
             results.AppendLine($"Total Objects: {selectedObjects.Count}");
-            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mm�");
-            results.AppendLine($"                    ({surfaceArea_mm2 / 1000000:F4} m�)");
+            results.AppendLine($"Total Surface Area: {surfaceArea_mm2:F2} mm²");
+            results.AppendLine($"                    ({surfaceArea_mm2 / 1000000:F4} m²)");
             results.AppendLine();
 
             double totalArea_m2 = surfaceArea_mm2 / 1000000.0;
@@ -1212,7 +1212,7 @@ namespace RHCoatingApp
                 double totalPrimerThinnerKg = totalPrimerThinnerGrams / 1000.0;
 
                 results.AppendLine($"Primer: {MaterialConfig.Primer.Name}");
-                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Consumption: {MaterialConfig.Primer.ConsumptionPerSqM:F1} g/m²");
                 results.AppendLine($"  Coats: {MaterialConfig.PrimerCoatMultiplier:F0}x");
                 results.AppendLine($"  Total Amount: {totalPrimerGrams:F1} g ({totalPrimerKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Primer.PricePerKg:F2}/kg");
@@ -1232,7 +1232,7 @@ namespace RHCoatingApp
                 double totalTopcoatThinnerKg = totalTopcoatThinnerGrams / 1000.0;
 
                 results.AppendLine($"Topcoat: {MaterialConfig.Topcoat.Name}");
-                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m�");
+                results.AppendLine($"  Consumption: {MaterialConfig.Topcoat.ConsumptionPerSqM:F1} g/m²");
                 results.AppendLine($"  Coats: {MaterialConfig.TopcoatCoatMultiplier:F0}x");
                 results.AppendLine($"  Total Amount: {totalTopcoatGrams:F1} g ({totalTopcoatKg:F3} kg)");
                 results.AppendLine($"  Price: Fr. {MaterialConfig.Topcoat.PricePerKg:F2}/kg");
@@ -1244,7 +1244,7 @@ namespace RHCoatingApp
 
             results.AppendLine($"Total Material Cost: Fr. {Costs.TotalMaterialCost:F2}");
             results.AppendLine($"Total Estimated Time: {EstimatedTime:F2} hours");
-            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/m�");
+            results.AppendLine($"Time Factor: {MaterialConfig.TimeFactor:F2} h/m²");
 
             // Add calculation breakdown
             results.AppendLine();
