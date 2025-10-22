@@ -75,7 +75,6 @@ namespace RHCoatingApp
             }
         }
 
-
         private List<Brep> SelectBreps(RhinoDoc doc)
         {
             List<Brep> breps = new List<Brep>();
@@ -126,9 +125,6 @@ namespace RHCoatingApp
 
         private MaterialConfig GetMaterialConfiguration(double surfaceArea_mm2)
         {
-            // For now, use simple command-line interface
-            // TODO: Implement proper UI dialog when Eto.Forms issues are resolved
-
             // Simple hardcoded materials for first version
             var materialNames = new[] { "Standard Primer", "Premium Primer", "Basic Topcoat", "Premium Topcoat" };
             var materialData = new[]
@@ -296,7 +292,6 @@ namespace RHCoatingApp
             doc.Views.Redraw();
             RhinoApp.WriteLine($"Highlighted {breps.Count} objects in viewport for calculation.");
         }
-
     }
 
     // Data classes for the coating calculation
