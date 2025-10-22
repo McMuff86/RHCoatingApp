@@ -11,6 +11,10 @@ namespace RHCoatingApp
     /// </summary>
     public class CoatingExporter
     {
+        // Shorthand references to config and labels for cleaner code
+        private static UnitsAndLabelsConfigData Config => UnitsAndLabelsConfigManager.Config;
+        private static LabelsConfig L => Config.Labels;
+        private static UnitsConfig U => Config.Units;
         /// <summary>
         /// Exports coating calculation results to a file in the specified format
         /// </summary>
@@ -51,30 +55,30 @@ namespace RHCoatingApp
         {
             using (var writer = new StreamWriter(filename))
             {
-                writer.WriteLine("Rhino CoatingApp Calculation Results");
-                writer.WriteLine($"Date: {DateTime.Now}");
-                writer.WriteLine($"Application Type: {config.ApplicationType}");
+                writer.WriteLine(L.Sections.CalculationResults);
+                writer.WriteLine($"{L.General.Date}: {DateTime.Now}");
+                writer.WriteLine($"{L.General.ApplicationType}: {config.ApplicationType}");
                 writer.WriteLine();
 
                 // Export individual objects
                 if (selectedObjects != null && selectedObjects.Count > 0)
                 {
-                    writer.WriteLine("INDIVIDUAL OBJECTS:");
+                    writer.WriteLine($"{L.Sections.IndividualObjects}:");
                     writer.WriteLine();
                     
                     for (int i = 0; i < selectedObjects.Count; i++)
                     {
                         var obj = selectedObjects[i];
-                        writer.WriteLine($"Object {i + 1}: {obj.Name}");
-                        writer.WriteLine($"  Surface Area: {obj.SurfaceArea_mm2:F2} mm² ({obj.SurfaceArea_mm2 / 1000000:F4} m²)");
+                        writer.WriteLine($"{L.General.Object} {i + 1}: {obj.Name}");
+                        writer.WriteLine($"  {L.Properties.SurfaceArea}: {UnitsAndLabelsConfigManager.FormatAreaBoth(obj.SurfaceArea_mm2)}");
                         
-                        double objArea_m2 = obj.SurfaceArea_mm2 / 1000000.0;
+                        double objArea_m2 = obj.SurfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
                         var objCosts = CalculateIndividualCosts(obj.SurfaceArea_mm2, config);
                         var objTime = EstimateIndividualTime(obj.SurfaceArea_mm2, config.TimeFactor);
                         
                         WriteObjectMaterialDetails(writer, objArea_m2, config, objCosts);
-                        writer.WriteLine($"  Total Material Cost: Fr. {objCosts.TotalMaterialCost:F2}");
-                        writer.WriteLine($"  Estimated Time: {objTime:F2} hours");
+                        writer.WriteLine($"  {L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TotalMaterialCost)}");
+                        writer.WriteLine($"  {L.Time.EstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(objTime)}");
                         writer.WriteLine();
                     }
 
@@ -92,29 +96,23 @@ namespace RHCoatingApp
             if (config.Primer != null)
             {
                 double primerGrams = objArea_m2 * config.Primer.ConsumptionPerSqM * config.PrimerCoatMultiplier;
-                double primerKg = primerGrams / 1000.0;
                 double primerHardenerGrams = primerGrams * (config.PrimerHardenerPercent / 100.0);
-                double primerHardenerKg = primerHardenerGrams / 1000.0;
                 double primerThinnerGrams = primerGrams * (config.PrimerThinnerPercent / 100.0);
-                double primerThinnerKg = primerThinnerGrams / 1000.0;
 
-                writer.WriteLine($"  Primer ({config.PrimerCoatMultiplier:F0}x coats): {primerGrams:F1} g ({primerKg:F3} kg) - Fr. {objCosts.PrimerCost:F2}");
-                writer.WriteLine($"    + Hardener ({config.PrimerHardenerPercent:F1}%): {primerHardenerGrams:F1} g ({primerHardenerKg:F3} kg) - Fr. {objCosts.PrimerHardenerCost:F2}");
-                writer.WriteLine($"    + Thinner ({config.PrimerThinnerPercent:F1}%): {primerThinnerGrams:F1} g ({primerThinnerKg:F3} kg) - Fr. {objCosts.PrimerThinnerCost:F2}");
+                writer.WriteLine($"  {L.Materials.Primer} ({config.PrimerCoatMultiplier:F0}x {L.Properties.Coats.ToLower()}): {UnitsAndLabelsConfigManager.FormatWeightBoth(primerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.PrimerCost)}");
+                writer.WriteLine($"    + {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(config.PrimerHardenerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(primerHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.PrimerHardenerCost)}");
+                writer.WriteLine($"    + {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(config.PrimerThinnerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(primerThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.PrimerThinnerCost)}");
             }
 
             if (config.Topcoat != null)
             {
                 double topcoatGrams = objArea_m2 * config.Topcoat.ConsumptionPerSqM * config.TopcoatCoatMultiplier;
-                double topcoatKg = topcoatGrams / 1000.0;
                 double topcoatHardenerGrams = topcoatGrams * (config.TopcoatHardenerPercent / 100.0);
-                double topcoatHardenerKg = topcoatHardenerGrams / 1000.0;
                 double topcoatThinnerGrams = topcoatGrams * (config.TopcoatThinnerPercent / 100.0);
-                double topcoatThinnerKg = topcoatThinnerGrams / 1000.0;
 
-                writer.WriteLine($"  Topcoat ({config.TopcoatCoatMultiplier:F0}x coats): {topcoatGrams:F1} g ({topcoatKg:F3} kg) - Fr. {objCosts.TopcoatCost:F2}");
-                writer.WriteLine($"    + Hardener ({config.TopcoatHardenerPercent:F1}%): {topcoatHardenerGrams:F1} g ({topcoatHardenerKg:F3} kg) - Fr. {objCosts.TopcoatHardenerCost:F2}");
-                writer.WriteLine($"    + Thinner ({config.TopcoatThinnerPercent:F1}%): {topcoatThinnerGrams:F1} g ({topcoatThinnerKg:F3} kg) - Fr. {objCosts.TopcoatThinnerCost:F2}");
+                writer.WriteLine($"  {L.Materials.Topcoat} ({config.TopcoatCoatMultiplier:F0}x {L.Properties.Coats.ToLower()}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatCost)}");
+                writer.WriteLine($"    + {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(config.TopcoatHardenerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatHardenerCost)}");
+                writer.WriteLine($"    + {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(config.TopcoatThinnerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(topcoatThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(objCosts.TopcoatThinnerCost)}");
             }
         }
 
@@ -122,79 +120,73 @@ namespace RHCoatingApp
                                          MaterialConfig config, CostCalculation costs, double estimatedTime,
                                          CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
-            writer.WriteLine("SUMMARY:");
+            writer.WriteLine($"{L.Sections.Summary}:");
             writer.WriteLine();
-            writer.WriteLine($"Total Objects: {objectCount}");
-            writer.WriteLine($"Total Surface Area: {surfaceArea_mm2:F2} mm² ({surfaceArea_mm2 / 1000000:F4} m²)");
+            writer.WriteLine($"{L.General.TotalObjects}: {objectCount}");
+            writer.WriteLine($"{L.Properties.SurfaceArea}: {UnitsAndLabelsConfigManager.FormatAreaBoth(surfaceArea_mm2)}");
             writer.WriteLine();
 
-            double totalArea_m2 = surfaceArea_mm2 / 1000000.0;
+            double totalArea_m2 = surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
 
             if (config.Primer != null)
             {
                 double totalPrimerGrams = totalArea_m2 * config.Primer.ConsumptionPerSqM * config.PrimerCoatMultiplier;
-                double totalPrimerKg = totalPrimerGrams / 1000.0;
                 double totalPrimerHardenerGrams = totalPrimerGrams * (config.PrimerHardenerPercent / 100.0);
-                double totalPrimerHardenerKg = totalPrimerHardenerGrams / 1000.0;
                 double totalPrimerThinnerGrams = totalPrimerGrams * (config.PrimerThinnerPercent / 100.0);
-                double totalPrimerThinnerKg = totalPrimerThinnerGrams / 1000.0;
 
-                writer.WriteLine($"Primer: {config.Primer.Name}");
-                writer.WriteLine($"  Consumption: {config.Primer.ConsumptionPerSqM:F1} g/m²");
-                writer.WriteLine($"  Coats: {config.PrimerCoatMultiplier:F0}x");
-                writer.WriteLine($"  Total Amount: {totalPrimerGrams:F1} g ({totalPrimerKg:F3} kg)");
-                writer.WriteLine($"  Price: Fr. {config.Primer.PricePerKg:F2}/kg");
-                writer.WriteLine($"  Total Cost: Fr. {costs.PrimerCost:F2}");
-                writer.WriteLine($"  Hardener ({config.PrimerHardenerPercent:F1}%): {totalPrimerHardenerGrams:F1} g ({totalPrimerHardenerKg:F3} kg) - Fr. {costs.PrimerHardenerCost:F2}");
-                writer.WriteLine($"  Thinner ({config.PrimerThinnerPercent:F1}%): {totalPrimerThinnerGrams:F1} g ({totalPrimerThinnerKg:F3} kg) - Fr. {costs.PrimerThinnerCost:F2}");
+                writer.WriteLine($"{L.Materials.Primer}: {config.Primer.Name}");
+                writer.WriteLine($"  {L.Properties.Consumption}: {UnitsAndLabelsConfigManager.FormatWeightSmall(config.Primer.ConsumptionPerSqM)}/{U.Area.LargeUnit}");
+                writer.WriteLine($"  {L.Properties.Coats}: {config.PrimerCoatMultiplier:F0}x");
+                writer.WriteLine($"  {L.Properties.TotalAmount}: {UnitsAndLabelsConfigManager.FormatWeightBoth(totalPrimerGrams)}");
+                writer.WriteLine($"  {L.Properties.Price}: {UnitsAndLabelsConfigManager.FormatCurrency(config.Primer.PricePerKg)}/{U.Weight.LargeUnit}");
+                writer.WriteLine($"  {L.Properties.TotalCost}: {UnitsAndLabelsConfigManager.FormatCurrency(costs.PrimerCost)}");
+                writer.WriteLine($"  {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(config.PrimerHardenerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(totalPrimerHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.PrimerHardenerCost)}");
+                writer.WriteLine($"  {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(config.PrimerThinnerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(totalPrimerThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.PrimerThinnerCost)}");
                 writer.WriteLine();
             }
 
             if (config.Topcoat != null)
             {
                 double totalTopcoatGrams = totalArea_m2 * config.Topcoat.ConsumptionPerSqM * config.TopcoatCoatMultiplier;
-                double totalTopcoatKg = totalTopcoatGrams / 1000.0;
                 double totalTopcoatHardenerGrams = totalTopcoatGrams * (config.TopcoatHardenerPercent / 100.0);
-                double totalTopcoatHardenerKg = totalTopcoatHardenerGrams / 1000.0;
                 double totalTopcoatThinnerGrams = totalTopcoatGrams * (config.TopcoatThinnerPercent / 100.0);
-                double totalTopcoatThinnerKg = totalTopcoatThinnerGrams / 1000.0;
 
-                writer.WriteLine($"Topcoat: {config.Topcoat.Name}");
-                writer.WriteLine($"  Consumption: {config.Topcoat.ConsumptionPerSqM:F1} g/m²");
-                writer.WriteLine($"  Coats: {config.TopcoatCoatMultiplier:F0}x");
-                writer.WriteLine($"  Total Amount: {totalTopcoatGrams:F1} g ({totalTopcoatKg:F3} kg)");
-                writer.WriteLine($"  Price: Fr. {config.Topcoat.PricePerKg:F2}/kg");
-                writer.WriteLine($"  Total Cost: Fr. {costs.TopcoatCost:F2}");
-                writer.WriteLine($"  Hardener ({config.TopcoatHardenerPercent:F1}%): {totalTopcoatHardenerGrams:F1} g ({totalTopcoatHardenerKg:F3} kg) - Fr. {costs.TopcoatHardenerCost:F2}");
-                writer.WriteLine($"  Thinner ({config.TopcoatThinnerPercent:F1}%): {totalTopcoatThinnerGrams:F1} g ({totalTopcoatThinnerKg:F3} kg) - Fr. {costs.TopcoatThinnerCost:F2}");
+                writer.WriteLine($"{L.Materials.Topcoat}: {config.Topcoat.Name}");
+                writer.WriteLine($"  {L.Properties.Consumption}: {UnitsAndLabelsConfigManager.FormatWeightSmall(config.Topcoat.ConsumptionPerSqM)}/{U.Area.LargeUnit}");
+                writer.WriteLine($"  {L.Properties.Coats}: {config.TopcoatCoatMultiplier:F0}x");
+                writer.WriteLine($"  {L.Properties.TotalAmount}: {UnitsAndLabelsConfigManager.FormatWeightBoth(totalTopcoatGrams)}");
+                writer.WriteLine($"  {L.Properties.Price}: {UnitsAndLabelsConfigManager.FormatCurrency(config.Topcoat.PricePerKg)}/{U.Weight.LargeUnit}");
+                writer.WriteLine($"  {L.Properties.TotalCost}: {UnitsAndLabelsConfigManager.FormatCurrency(costs.TopcoatCost)}");
+                writer.WriteLine($"  {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(config.TopcoatHardenerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(totalTopcoatHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.TopcoatHardenerCost)}");
+                writer.WriteLine($"  {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(config.TopcoatThinnerPercent)}): {UnitsAndLabelsConfigManager.FormatWeightBoth(totalTopcoatThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.TopcoatThinnerCost)}");
                 writer.WriteLine();
             }
 
-            writer.WriteLine($"Total Material Cost: Fr. {costs.TotalMaterialCost:F2}");
-            writer.WriteLine($"Total Estimated Time: {estimatedTime:F2} hours");
-            writer.WriteLine($"Time Factor: {config.TimeFactor:F2} h/m²");
+            writer.WriteLine($"{L.Costs.TotalMaterialCost}: {UnitsAndLabelsConfigManager.FormatCurrency(costs.TotalMaterialCost)}");
+            writer.WriteLine($"{L.Time.TotalEstimatedTime}: {UnitsAndLabelsConfigManager.FormatTime(estimatedTime)}");
+            writer.WriteLine($"{L.Time.TimeFactor}: {config.TimeFactor:F2} {U.Time.Unit}/{U.Area.LargeUnit}");
 
             // Add calculation breakdown if available
             if (calculationResult != null && calculationFactors != null)
             {
                 writer.WriteLine();
-                writer.WriteLine("=== OFFER CALCULATION ===");
+                writer.WriteLine($"=== {L.Sections.OfferCalculation} ===");
                 writer.WriteLine();
-                writer.WriteLine($"Base Material Cost:     Fr. {calculationResult.BaseMaterialCost:F2}");
+                writer.WriteLine($"{L.Costs.BaseMaterialCost}:     {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.BaseMaterialCost)}");
 
                 if (calculationResult.MaterialSurcharge > 0 && calculationFactors.TryGetValue("MaterialCostFactor", out double materialFactor))
-                    writer.WriteLine($"Material Surcharge ({materialFactor:F1}%): Fr. {calculationResult.MaterialSurcharge:F2}");
+                    writer.WriteLine($"{L.Costs.MaterialSurcharge} ({UnitsAndLabelsConfigManager.FormatPercentage(materialFactor)}): {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.MaterialSurcharge)}");
                 if (calculationResult.ProductionCost > 0 && calculationFactors.TryGetValue("ProductionCostFactor", out double productionFactor))
-                    writer.WriteLine($"Production Cost ({productionFactor:F1}%):    Fr. {calculationResult.ProductionCost:F2}");
+                    writer.WriteLine($"{L.Costs.ProductionCost} ({UnitsAndLabelsConfigManager.FormatPercentage(productionFactor)}):    {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.ProductionCost)}");
                 if (calculationResult.AdministrationCost > 0 && calculationFactors.TryGetValue("AdministrationCostFactor", out double adminFactor))
-                    writer.WriteLine($"Administration Cost ({adminFactor:F1}%): Fr. {calculationResult.AdministrationCost:F2}");
+                    writer.WriteLine($"{L.Costs.AdministrationCost} ({UnitsAndLabelsConfigManager.FormatPercentage(adminFactor)}): {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.AdministrationCost)}");
                 if (calculationResult.SalesCost > 0 && calculationFactors.TryGetValue("SalesCostFactor", out double salesFactor))
-                    writer.WriteLine($"Sales Cost ({salesFactor:F1}%):         Fr. {calculationResult.SalesCost:F2}");
+                    writer.WriteLine($"{L.Costs.SalesCost} ({UnitsAndLabelsConfigManager.FormatPercentage(salesFactor)}):         {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.SalesCost)}");
                 if (calculationResult.ProfitMargin > 0 && calculationFactors.TryGetValue("ProfitMarginFactor", out double profitFactor))
-                    writer.WriteLine($"Profit Margin ({profitFactor:F1}%):      Fr. {calculationResult.ProfitMargin:F2}");
+                    writer.WriteLine($"{L.Costs.ProfitMargin} ({UnitsAndLabelsConfigManager.FormatPercentage(profitFactor)}):      {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.ProfitMargin)}");
 
                 writer.WriteLine();
-                writer.WriteLine($"FINAL OFFER PRICE: Fr. {calculationResult.FinalOfferPrice:F2}");
+                writer.WriteLine($"{L.Costs.FinalOfferPrice}: {UnitsAndLabelsConfigManager.FormatCurrency(calculationResult.FinalOfferPrice)}");
             }
         }
 
@@ -209,14 +201,21 @@ namespace RHCoatingApp
             using (var writer = new StreamWriter(filename))
             {
                 // Header
-                writer.WriteLine("Rhino CoatingApp Calculation Results");
-                writer.WriteLine($"Date,{DateTime.Now}");
-                writer.WriteLine($"Application Type,{config.ApplicationType}");
+                writer.WriteLine(L.Sections.CalculationResults);
+                writer.WriteLine($"{L.General.Date},{DateTime.Now}");
+                writer.WriteLine($"{L.General.ApplicationType},{config.ApplicationType}");
                 writer.WriteLine();
 
                 // Individual objects table
-                writer.WriteLine("INDIVIDUAL OBJECTS");
-                writer.WriteLine("Object,Name,Surface Area (mm²),Surface Area (m²),Primer (g),Primer (kg),Primer Coats,Primer Cost (Fr.),Primer Hardener (g),Primer Hardener (kg),Primer Hardener Cost (Fr.),Primer Thinner (g),Primer Thinner (kg),Primer Thinner Cost (Fr.),Topcoat (g),Topcoat (kg),Topcoat Coats,Topcoat Cost (Fr.),Topcoat Hardener (g),Topcoat Hardener (kg),Topcoat Hardener Cost (Fr.),Topcoat Thinner (g),Topcoat Thinner (kg),Topcoat Thinner Cost (Fr.),Total Cost (Fr.),Time (hours)");
+                writer.WriteLine(L.Sections.IndividualObjects);
+                writer.WriteLine($"{L.General.Object},{L.General.Name},{L.Properties.SurfaceArea} ({U.Area.SmallUnit}),{L.Properties.SurfaceArea} ({U.Area.LargeUnit})," +
+                               $"{L.Materials.Primer} ({U.Weight.SmallUnit}),{L.Materials.Primer} ({U.Weight.LargeUnit}),{L.Materials.Primer} {L.Properties.Coats},{L.Materials.Primer} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
+                               $"{L.Materials.Primer} {L.Materials.Hardener} ({U.Weight.SmallUnit}),{L.Materials.Primer} {L.Materials.Hardener} ({U.Weight.LargeUnit}),{L.Materials.Primer} {L.Materials.Hardener} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
+                               $"{L.Materials.Primer} {L.Materials.Thinner} ({U.Weight.SmallUnit}),{L.Materials.Primer} {L.Materials.Thinner} ({U.Weight.LargeUnit}),{L.Materials.Primer} {L.Materials.Thinner} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
+                               $"{L.Materials.Topcoat} ({U.Weight.SmallUnit}),{L.Materials.Topcoat} ({U.Weight.LargeUnit}),{L.Materials.Topcoat} {L.Properties.Coats},{L.Materials.Topcoat} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
+                               $"{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.SmallUnit}),{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.LargeUnit}),{L.Materials.Topcoat} {L.Materials.Hardener} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
+                               $"{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.SmallUnit}),{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.LargeUnit}),{L.Materials.Topcoat} {L.Materials.Thinner} {L.Properties.TotalCost} ({U.Currency.Symbol})," +
+                               $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol}),{L.Time.EstimatedTime} ({U.Time.UnitLong})");
                 
                 if (selectedObjects != null && selectedObjects.Count > 0)
                 {
@@ -249,13 +248,13 @@ namespace RHCoatingApp
                                             MaterialConfig config, CostCalculation costs, double estimatedTime,
                                             CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
-            writer.WriteLine("SUMMARY");
-            writer.WriteLine($"Total Objects,{objectCount}");
-            writer.WriteLine($"Total Surface Area (mm²),{surfaceArea_mm2:F2}");
-            writer.WriteLine($"Total Surface Area (m²),{surfaceArea_mm2 / 1000000:F4}");
+            writer.WriteLine(L.Sections.Summary);
+            writer.WriteLine($"{L.General.TotalObjects},{objectCount}");
+            writer.WriteLine($"{L.Properties.SurfaceArea} ({U.Area.SmallUnit}),{surfaceArea_mm2:F2}");
+            writer.WriteLine($"{L.Properties.SurfaceArea} ({U.Area.LargeUnit}),{surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor():F4}");
             writer.WriteLine();
             
-            double totalArea_m2 = surfaceArea_mm2 / 1000000.0;
+            double totalArea_m2 = surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
             var totalAmounts = CalculateMaterialAmounts(totalArea_m2, config);
             
             if (config.Primer != null)
@@ -325,16 +324,16 @@ namespace RHCoatingApp
                 int row = 1;
 
                 // Header
-                worksheet.Cell(row, 1).Value = "Rhino CoatingApp Calculation Results";
+                worksheet.Cell(row, 1).Value = L.Sections.CalculationResults;
                 worksheet.Cell(row, 1).Style.Font.Bold = true;
                 worksheet.Cell(row, 1).Style.Font.FontSize = 14;
                 row += 2;
                 
-                worksheet.Cell(row, 1).Value = "Date:";
+                worksheet.Cell(row, 1).Value = $"{L.General.Date}:";
                 worksheet.Cell(row, 2).Value = DateTime.Now.ToString();
                 row += 1;
                 
-                worksheet.Cell(row, 1).Value = "Application Type:";
+                worksheet.Cell(row, 1).Value = $"{L.General.ApplicationType}:";
                 worksheet.Cell(row, 2).Value = config.ApplicationType.ToString();
                 row += 2;
 
@@ -354,21 +353,21 @@ namespace RHCoatingApp
 
         private static int WriteExcelObjectsTable(IXLWorksheet worksheet, int row, List<ObjectInfo> selectedObjects, MaterialConfig config)
         {
-            worksheet.Cell(row, 1).Value = "INDIVIDUAL OBJECTS";
+            worksheet.Cell(row, 1).Value = L.Sections.IndividualObjects;
             worksheet.Cell(row, 1).Style.Font.Bold = true;
             worksheet.Cell(row, 1).Style.Font.FontSize = 12;
             row += 1;
             
             // Table header
             string[] headers = new[] {
-                "Object", "Name", "Surface Area (mm²)", "Surface Area (m²)",
-                "Primer (g)", "Primer (kg)", "Primer Coats", "Primer Cost (Fr.)",
-                "Primer Hardener (g)", "Primer Hardener (kg)", "Primer Hardener Cost (Fr.)",
-                "Primer Thinner (g)", "Primer Thinner (kg)", "Primer Thinner Cost (Fr.)",
-                "Topcoat (g)", "Topcoat (kg)", "Topcoat Coats", "Topcoat Cost (Fr.)",
-                "Topcoat Hardener (g)", "Topcoat Hardener (kg)", "Topcoat Hardener Cost (Fr.)",
-                "Topcoat Thinner (g)", "Topcoat Thinner (kg)", "Topcoat Thinner Cost (Fr.)",
-                "Total Cost (Fr.)", "Time (hours)"
+                L.General.Object, L.General.Name, $"{L.Properties.SurfaceArea} ({U.Area.SmallUnit})", $"{L.Properties.SurfaceArea} ({U.Area.LargeUnit})",
+                $"{L.Materials.Primer} ({U.Weight.SmallUnit})", $"{L.Materials.Primer} ({U.Weight.LargeUnit})", $"{L.Materials.Primer} {L.Properties.Coats}", $"{L.Materials.Primer} {L.Properties.TotalCost} ({U.Currency.Symbol})",
+                $"{L.Materials.Primer} {L.Materials.Hardener} ({U.Weight.SmallUnit})", $"{L.Materials.Primer} {L.Materials.Hardener} ({U.Weight.LargeUnit})", $"{L.Materials.Primer} {L.Materials.Hardener} {L.Properties.TotalCost} ({U.Currency.Symbol})",
+                $"{L.Materials.Primer} {L.Materials.Thinner} ({U.Weight.SmallUnit})", $"{L.Materials.Primer} {L.Materials.Thinner} ({U.Weight.LargeUnit})", $"{L.Materials.Primer} {L.Materials.Thinner} {L.Properties.TotalCost} ({U.Currency.Symbol})",
+                $"{L.Materials.Topcoat} ({U.Weight.SmallUnit})", $"{L.Materials.Topcoat} ({U.Weight.LargeUnit})", $"{L.Materials.Topcoat} {L.Properties.Coats}", $"{L.Materials.Topcoat} {L.Properties.TotalCost} ({U.Currency.Symbol})",
+                $"{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.SmallUnit})", $"{L.Materials.Topcoat} {L.Materials.Hardener} ({U.Weight.LargeUnit})", $"{L.Materials.Topcoat} {L.Materials.Hardener} {L.Properties.TotalCost} ({U.Currency.Symbol})",
+                $"{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.SmallUnit})", $"{L.Materials.Topcoat} {L.Materials.Thinner} ({U.Weight.LargeUnit})", $"{L.Materials.Topcoat} {L.Materials.Thinner} {L.Properties.TotalCost} ({U.Currency.Symbol})",
+                $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol})", $"{L.Time.EstimatedTime} ({U.Time.UnitLong})"
             };
             
             for (int col = 0; col < headers.Length; col++)
@@ -429,150 +428,150 @@ namespace RHCoatingApp
                                              MaterialConfig config, CostCalculation costs, double estimatedTime,
                                              CalculationResult calculationResult = null, Dictionary<string, double> calculationFactors = null)
         {
-            worksheet.Cell(row, 1).Value = "SUMMARY";
+            worksheet.Cell(row, 1).Value = L.Sections.Summary;
             worksheet.Cell(row, 1).Style.Font.Bold = true;
             worksheet.Cell(row, 1).Style.Font.FontSize = 12;
             row += 1;
             
-            worksheet.Cell(row, 1).Value = "Total Objects:";
+            worksheet.Cell(row, 1).Value = $"{L.General.TotalObjects}:";
             worksheet.Cell(row, 2).Value = objectCount;
             row += 1;
             
-            worksheet.Cell(row, 1).Value = "Total Surface Area (mm²):";
+            worksheet.Cell(row, 1).Value = $"{L.Properties.SurfaceArea} ({U.Area.SmallUnit}):";
             worksheet.Cell(row, 2).Value = surfaceArea_mm2;
             row += 1;
             
-            worksheet.Cell(row, 1).Value = "Total Surface Area (m²):";
-            worksheet.Cell(row, 2).Value = surfaceArea_mm2 / 1000000;
+            worksheet.Cell(row, 1).Value = $"{L.Properties.SurfaceArea} ({U.Area.LargeUnit}):";
+            worksheet.Cell(row, 2).Value = surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
             row += 2;
             
-            double totalArea_m2 = surfaceArea_mm2 / 1000000.0;
+            double totalArea_m2 = surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
             var totalAmounts = CalculateMaterialAmounts(totalArea_m2, config);
             
             if (config.Primer != null)
             {
-                worksheet.Cell(row, 1).Value = "Primer:";
+                worksheet.Cell(row, 1).Value = $"{L.Materials.Primer}:";
                 worksheet.Cell(row, 2).Value = config.Primer.Name;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Consumption (g/m²):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.Consumption} ({U.Weight.SmallUnit}/{U.Area.LargeUnit}):";
                 worksheet.Cell(row, 2).Value = config.Primer.ConsumptionPerSqM;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Coats:";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.Coats}:";
                 worksheet.Cell(row, 2).Value = $"{config.PrimerCoatMultiplier:F0}x";
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Total Amount (g):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.TotalAmount} ({U.Weight.SmallUnit}):";
                 worksheet.Cell(row, 2).Value = totalAmounts.PrimerGrams;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Total Amount (kg):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.TotalAmount} ({U.Weight.LargeUnit}):";
                 worksheet.Cell(row, 2).Value = totalAmounts.PrimerKg;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Price (Fr./kg):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.Price} ({U.Currency.Symbol}/{U.Weight.LargeUnit}):";
                 worksheet.Cell(row, 2).Value = config.Primer.PricePerKg;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Total Cost (Fr.):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.TotalCost} ({U.Currency.Symbol}):";
                 worksheet.Cell(row, 2).Value = costs.PrimerCost;
                 row += 1;
-                worksheet.Cell(row, 1).Value = $"  Hardener ({config.PrimerHardenerPercent:F1}%):";
-                worksheet.Cell(row, 2).Value = $"{totalAmounts.PrimerHardenerGrams:F1} g ({totalAmounts.PrimerHardenerKg:F3} kg) - Fr. {costs.PrimerHardenerCost:F2}";
+                worksheet.Cell(row, 1).Value = $"  {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(config.PrimerHardenerPercent)}):";
+                worksheet.Cell(row, 2).Value = $"{UnitsAndLabelsConfigManager.FormatWeightBoth(totalAmounts.PrimerHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.PrimerHardenerCost)}";
                 row += 1;
-                worksheet.Cell(row, 1).Value = $"  Thinner ({config.PrimerThinnerPercent:F1}%):";
-                worksheet.Cell(row, 2).Value = $"{totalAmounts.PrimerThinnerGrams:F1} g ({totalAmounts.PrimerThinnerKg:F3} kg) - Fr. {costs.PrimerThinnerCost:F2}";
+                worksheet.Cell(row, 1).Value = $"  {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(config.PrimerThinnerPercent)}):";
+                worksheet.Cell(row, 2).Value = $"{UnitsAndLabelsConfigManager.FormatWeightBoth(totalAmounts.PrimerThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.PrimerThinnerCost)}";
                 row += 2;
             }
 
             if (config.Topcoat != null)
             {
-                worksheet.Cell(row, 1).Value = "Topcoat:";
+                worksheet.Cell(row, 1).Value = $"{L.Materials.Topcoat}:";
                 worksheet.Cell(row, 2).Value = config.Topcoat.Name;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Consumption (g/m²):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.Consumption} ({U.Weight.SmallUnit}/{U.Area.LargeUnit}):";
                 worksheet.Cell(row, 2).Value = config.Topcoat.ConsumptionPerSqM;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Coats:";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.Coats}:";
                 worksheet.Cell(row, 2).Value = $"{config.TopcoatCoatMultiplier:F0}x";
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Total Amount (g):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.TotalAmount} ({U.Weight.SmallUnit}):";
                 worksheet.Cell(row, 2).Value = totalAmounts.TopcoatGrams;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Total Amount (kg):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.TotalAmount} ({U.Weight.LargeUnit}):";
                 worksheet.Cell(row, 2).Value = totalAmounts.TopcoatKg;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Price (Fr./kg):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.Price} ({U.Currency.Symbol}/{U.Weight.LargeUnit}):";
                 worksheet.Cell(row, 2).Value = config.Topcoat.PricePerKg;
                 row += 1;
-                worksheet.Cell(row, 1).Value = "  Total Cost (Fr.):";
+                worksheet.Cell(row, 1).Value = $"  {L.Properties.TotalCost} ({U.Currency.Symbol}):";
                 worksheet.Cell(row, 2).Value = costs.TopcoatCost;
                 row += 1;
-                worksheet.Cell(row, 1).Value = $"  Hardener ({config.TopcoatHardenerPercent:F1}%):";
-                worksheet.Cell(row, 2).Value = $"{totalAmounts.TopcoatHardenerGrams:F1} g ({totalAmounts.TopcoatHardenerKg:F3} kg) - Fr. {costs.TopcoatHardenerCost:F2}";
+                worksheet.Cell(row, 1).Value = $"  {L.Materials.Hardener} ({UnitsAndLabelsConfigManager.FormatPercentage(config.TopcoatHardenerPercent)}):";
+                worksheet.Cell(row, 2).Value = $"{UnitsAndLabelsConfigManager.FormatWeightBoth(totalAmounts.TopcoatHardenerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.TopcoatHardenerCost)}";
                 row += 1;
-                worksheet.Cell(row, 1).Value = $"  Thinner ({config.TopcoatThinnerPercent:F1}%):";
-                worksheet.Cell(row, 2).Value = $"{totalAmounts.TopcoatThinnerGrams:F1} g ({totalAmounts.TopcoatThinnerKg:F3} kg) - Fr. {costs.TopcoatThinnerCost:F2}";
+                worksheet.Cell(row, 1).Value = $"  {L.Materials.Thinner} ({UnitsAndLabelsConfigManager.FormatPercentage(config.TopcoatThinnerPercent)}):";
+                worksheet.Cell(row, 2).Value = $"{UnitsAndLabelsConfigManager.FormatWeightBoth(totalAmounts.TopcoatThinnerGrams)} - {UnitsAndLabelsConfigManager.FormatCurrency(costs.TopcoatThinnerCost)}";
                 row += 2;
             }
             
-            worksheet.Cell(row, 1).Value = "Total Material Cost (Fr.):";
+            worksheet.Cell(row, 1).Value = $"{L.Costs.TotalMaterialCost} ({U.Currency.Symbol}):";
             worksheet.Cell(row, 2).Value = costs.TotalMaterialCost;
             worksheet.Cell(row, 1).Style.Font.Bold = true;
             row += 1;
             
-            worksheet.Cell(row, 1).Value = "Total Estimated Time (hours):";
+            worksheet.Cell(row, 1).Value = $"{L.Time.TotalEstimatedTime} ({U.Time.UnitLong}):";
             worksheet.Cell(row, 2).Value = estimatedTime;
             row += 1;
             
-            worksheet.Cell(row, 1).Value = "Time Factor (h/m²):";
+            worksheet.Cell(row, 1).Value = $"{L.Time.TimeFactor} ({U.Time.Unit}/{U.Area.LargeUnit}):";
             worksheet.Cell(row, 2).Value = config.TimeFactor;
             row += 2;
 
             // Add calculation breakdown if available
             if (calculationResult != null && calculationFactors != null)
             {
-                worksheet.Cell(row, 1).Value = "OFFER CALCULATION";
+                worksheet.Cell(row, 1).Value = L.Sections.OfferCalculation;
                 worksheet.Cell(row, 1).Style.Font.Bold = true;
                 worksheet.Cell(row, 1).Style.Font.FontSize = 12;
                 row += 1;
 
-                worksheet.Cell(row, 1).Value = "Base Material Cost (Fr.):";
+                worksheet.Cell(row, 1).Value = $"{L.Costs.BaseMaterialCost} ({U.Currency.Symbol}):";
                 worksheet.Cell(row, 2).Value = calculationResult.BaseMaterialCost;
                 row += 1;
 
                 if (calculationResult.MaterialSurcharge > 0 && calculationFactors.TryGetValue("MaterialCostFactor", out double materialFactor))
                 {
-                    worksheet.Cell(row, 1).Value = $"Material Surcharge ({materialFactor:F1}%):";
+                    worksheet.Cell(row, 1).Value = $"{L.Costs.MaterialSurcharge} ({UnitsAndLabelsConfigManager.FormatPercentage(materialFactor)}):";
                     worksheet.Cell(row, 2).Value = calculationResult.MaterialSurcharge;
                     row += 1;
                 }
 
                 if (calculationResult.ProductionCost > 0 && calculationFactors.TryGetValue("ProductionCostFactor", out double productionFactor))
                 {
-                    worksheet.Cell(row, 1).Value = $"Production Cost ({productionFactor:F1}%):";
+                    worksheet.Cell(row, 1).Value = $"{L.Costs.ProductionCost} ({UnitsAndLabelsConfigManager.FormatPercentage(productionFactor)}):";
                     worksheet.Cell(row, 2).Value = calculationResult.ProductionCost;
                     row += 1;
                 }
 
                 if (calculationResult.AdministrationCost > 0 && calculationFactors.TryGetValue("AdministrationCostFactor", out double adminFactor))
                 {
-                    worksheet.Cell(row, 1).Value = $"Administration Cost ({adminFactor:F1}%):";
+                    worksheet.Cell(row, 1).Value = $"{L.Costs.AdministrationCost} ({UnitsAndLabelsConfigManager.FormatPercentage(adminFactor)}):";
                     worksheet.Cell(row, 2).Value = calculationResult.AdministrationCost;
                     row += 1;
                 }
 
                 if (calculationResult.SalesCost > 0 && calculationFactors.TryGetValue("SalesCostFactor", out double salesFactor))
                 {
-                    worksheet.Cell(row, 1).Value = $"Sales Cost ({salesFactor:F1}%):";
+                    worksheet.Cell(row, 1).Value = $"{L.Costs.SalesCost} ({UnitsAndLabelsConfigManager.FormatPercentage(salesFactor)}):";
                     worksheet.Cell(row, 2).Value = calculationResult.SalesCost;
                     row += 1;
                 }
 
                 if (calculationResult.ProfitMargin > 0 && calculationFactors.TryGetValue("ProfitMarginFactor", out double profitFactor))
                 {
-                    worksheet.Cell(row, 1).Value = $"Profit Margin ({profitFactor:F1}%):";
+                    worksheet.Cell(row, 1).Value = $"{L.Costs.ProfitMargin} ({UnitsAndLabelsConfigManager.FormatPercentage(profitFactor)}):";
                     worksheet.Cell(row, 2).Value = calculationResult.ProfitMargin;
                     row += 1;
                 }
 
                 row += 1;
-                worksheet.Cell(row, 1).Value = "FINAL OFFER PRICE (Fr.):";
+                worksheet.Cell(row, 1).Value = $"{L.Costs.FinalOfferPrice} ({U.Currency.Symbol}):";
                 worksheet.Cell(row, 2).Value = calculationResult.FinalOfferPrice;
                 worksheet.Cell(row, 1).Style.Font.Bold = true;
                 worksheet.Cell(row, 2).Style.Font.Bold = true;
@@ -590,20 +589,20 @@ namespace RHCoatingApp
         private static CostCalculation CalculateIndividualCosts(double surfaceArea_mm2, MaterialConfig config)
         {
             CostCalculation costs = new CostCalculation();
-            double surfaceArea_m2 = surfaceArea_mm2 / 1000000.0;
+            double surfaceArea_m2 = surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
 
             if (config.Primer != null)
             {
                 double primerGrams = surfaceArea_m2 * config.Primer.ConsumptionPerSqM;
-                double primerKg = primerGrams / 1000.0;
+                double primerKg = primerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 costs.PrimerCost = primerKg * config.Primer.PricePerKg;
                 
                 double primerHardenerGrams = primerGrams * (config.PrimerHardenerPercent / 100.0);
-                double primerHardenerKg = primerHardenerGrams / 1000.0;
+                double primerHardenerKg = primerHardenerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 costs.PrimerHardenerCost = primerHardenerKg * config.HardenerPricePerKg;
                 
                 double primerThinnerGrams = primerGrams * (config.PrimerThinnerPercent / 100.0);
-                double primerThinnerKg = primerThinnerGrams / 1000.0;
+                double primerThinnerKg = primerThinnerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 costs.PrimerThinnerCost = primerThinnerKg * config.ThinnerPricePerKg;
                 
                 costs.TotalMaterialCost += costs.PrimerCost + costs.PrimerHardenerCost + costs.PrimerThinnerCost;
@@ -612,15 +611,15 @@ namespace RHCoatingApp
             if (config.Topcoat != null)
             {
                 double topcoatGrams = surfaceArea_m2 * config.Topcoat.ConsumptionPerSqM;
-                double topcoatKg = topcoatGrams / 1000.0;
+                double topcoatKg = topcoatGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 costs.TopcoatCost = topcoatKg * config.Topcoat.PricePerKg;
                 
                 double topcoatHardenerGrams = topcoatGrams * (config.TopcoatHardenerPercent / 100.0);
-                double topcoatHardenerKg = topcoatHardenerGrams / 1000.0;
+                double topcoatHardenerKg = topcoatHardenerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 costs.TopcoatHardenerCost = topcoatHardenerKg * config.HardenerPricePerKg;
                 
                 double topcoatThinnerGrams = topcoatGrams * (config.TopcoatThinnerPercent / 100.0);
-                double topcoatThinnerKg = topcoatThinnerGrams / 1000.0;
+                double topcoatThinnerKg = topcoatThinnerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 costs.TopcoatThinnerCost = topcoatThinnerKg * config.ThinnerPricePerKg;
                 
                 costs.TotalMaterialCost += costs.TopcoatCost + costs.TopcoatHardenerCost + costs.TopcoatThinnerCost;
@@ -631,7 +630,7 @@ namespace RHCoatingApp
 
         private static double EstimateIndividualTime(double surfaceArea_mm2, double timeFactor)
         {
-            double surfaceArea_m2 = surfaceArea_mm2 / 1000000.0;
+            double surfaceArea_m2 = surfaceArea_mm2 / UnitsAndLabelsConfigManager.GetAreaConversionFactor();
             return surfaceArea_m2 * timeFactor;
         }
 
@@ -642,21 +641,21 @@ namespace RHCoatingApp
             if (config.Primer != null)
             {
                 amounts.PrimerGrams = area_m2 * config.Primer.ConsumptionPerSqM * config.PrimerCoatMultiplier;
-                amounts.PrimerKg = amounts.PrimerGrams / 1000.0;
+                amounts.PrimerKg = amounts.PrimerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 amounts.PrimerHardenerGrams = amounts.PrimerGrams * (config.PrimerHardenerPercent / 100.0);
-                amounts.PrimerHardenerKg = amounts.PrimerHardenerGrams / 1000.0;
+                amounts.PrimerHardenerKg = amounts.PrimerHardenerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 amounts.PrimerThinnerGrams = amounts.PrimerGrams * (config.PrimerThinnerPercent / 100.0);
-                amounts.PrimerThinnerKg = amounts.PrimerThinnerGrams / 1000.0;
+                amounts.PrimerThinnerKg = amounts.PrimerThinnerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
             }
 
             if (config.Topcoat != null)
             {
                 amounts.TopcoatGrams = area_m2 * config.Topcoat.ConsumptionPerSqM * config.TopcoatCoatMultiplier;
-                amounts.TopcoatKg = amounts.TopcoatGrams / 1000.0;
+                amounts.TopcoatKg = amounts.TopcoatGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 amounts.TopcoatHardenerGrams = amounts.TopcoatGrams * (config.TopcoatHardenerPercent / 100.0);
-                amounts.TopcoatHardenerKg = amounts.TopcoatHardenerGrams / 1000.0;
+                amounts.TopcoatHardenerKg = amounts.TopcoatHardenerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
                 amounts.TopcoatThinnerGrams = amounts.TopcoatGrams * (config.TopcoatThinnerPercent / 100.0);
-                amounts.TopcoatThinnerKg = amounts.TopcoatThinnerGrams / 1000.0;
+                amounts.TopcoatThinnerKg = amounts.TopcoatThinnerGrams / UnitsAndLabelsConfigManager.GetWeightConversionFactor();
             }
 
             return amounts;

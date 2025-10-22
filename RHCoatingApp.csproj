@@ -37,8 +37,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Copy configuration file to output directory -->
+    <!-- Copy configuration files to output directory -->
     <None Update="CoatingConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CalculationConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="UnitsAndLabels.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

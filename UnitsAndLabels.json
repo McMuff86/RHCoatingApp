@@ -1,0 +1,94 @@
+{
+  "Units": {
+    "Area": {
+      "SmallUnit": "mm²",
+      "LargeUnit": "m²",
+      "ConversionFactor": 1000000.0
+    },
+    "Weight": {
+      "SmallUnit": "g",
+      "LargeUnit": "kg",
+      "ConversionFactor": 1000.0
+    },
+    "Currency": {
+      "Symbol": "Fr.",
+      "Position": "before"
+    },
+    "Time": {
+      "Unit": "h",
+      "UnitLong": "hours"
+    }
+  },
+  "Labels": {
+    "Materials": {
+      "Primer": "Primer",
+      "Topcoat": "Topcoat",
+      "Hardener": "Hardener",
+      "Thinner": "Thinner"
+    },
+    "Properties": {
+      "Consumption": "Consumption",
+      "Price": "Price",
+      "Coats": "Coats",
+      "TotalAmount": "Total Amount",
+      "TotalCost": "Total Cost",
+      "SurfaceArea": "Surface Area"
+    },
+    "Costs": {
+      "BaseMaterialCost": "Base Material Cost",
+      "TotalMaterialCost": "Total Material Cost",
+      "MaterialSurcharge": "Material Surcharge",
+      "ProductionCost": "Production Cost",
+      "AdministrationCost": "Administration Cost",
+      "SalesCost": "Sales Cost",
+      "ProfitMargin": "Profit Margin",
+      "FinalOfferPrice": "FINAL OFFER PRICE"
+    },
+    "Time": {
+      "EstimatedTime": "Estimated Time",
+      "TotalEstimatedTime": "Total Estimated Time",
+      "TimeFactor": "Time Factor"
+    },
+    "Sections": {
+      "IndividualObjects": "INDIVIDUAL OBJECTS",
+      "Summary": "SUMMARY",
+      "OfferCalculation": "OFFER CALCULATION",
+      "Results": "Results",
+      "CalculationResults": "Rhino CoatingApp Calculation Results"
+    },
+    "General": {
+      "Object": "Object",
+      "Name": "Name",
+      "TotalObjects": "Total Objects",
+      "Date": "Date",
+      "ApplicationType": "Application Type",
+      "CoatMultipliers": "Coat Multipliers"
+    },
+    "UI": {
+      "NoObjectsSelected": "No objects selected",
+      "ClickToCalculate": "Click 'Calculate' to see results...",
+      "SelectObjectsFirst": "Select objects and click 'Calculate' to see results...",
+      "ObjectsCleared": "Objects cleared. Select new objects to calculate."
+    },
+    "Export": {
+      "ExportTitle": "Export Coating Calculation",
+      "ExcelFiles": "Excel Files",
+      "CsvFiles": "CSV Files",
+      "TextFiles": "Text Files",
+      "AllFiles": "All Files",
+      "ExportSuccess": "Results exported successfully to:",
+      "ExportError": "Error exporting results:"
+    }
+  },
+  "FormatStrings": {
+    "AreaSmall": "{0:F2} {1}",
+    "AreaLarge": "{0:F4} {1}",
+    "WeightSmall": "{0:F1} {1}",
+    "WeightLarge": "{0:F3} {1}",
+    "Currency": "{0} {1:F2}",
+    "Time": "{0:F2} {1}",
+    "Percentage": "{0:F1}%",
+    "PerUnit": "{0}/{1}"
+  }
+}
+
