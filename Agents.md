@@ -32,12 +32,12 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
 - **Details:**
   - Costs displayed in Swiss Francs (Fr.)
   - Automatic summation of costs for all selected materials including additives
-  - Hardener costs calculated as percentage of base material (default: Fr. 30/kg)
-  - Thinner costs calculated as percentage of base material (default: Fr. 15/kg)
+  - Hardener costs calculated as percentage of base material (editable price, default: Fr. 23/kg)
+  - Thinner costs calculated as percentage of base material (editable price, default: Fr. 9/kg)
   - Supports custom pricing and consumption rates
   - Real-time calculation based on actual surface area
   - Separate calculations for indoor and outdoor applications
-- **Benefit:** Transparent cost calculation for accurate budgeting and quoting with Swiss currency support, including all necessary additives.
+- **Benefit:** Transparent cost calculation for accurate budgeting and quoting with Swiss currency support, including all necessary additives with configurable prices.
 
 ### 4. **Time Estimation**
 - **Function:** Allows input of a time factor per square meter to estimate the working time for coating tasks.
@@ -96,7 +96,8 @@ The **Rhino CoatingApp Agent** is a powerful tool for planning and calculating c
   - `RadioButtonList` for application type selection (Indoor/Outdoor)
   - `DropDown` for material selection (primer and topcoat)
   - `NumericStepper` for editable consumption rates (g/m²)
-  - `NumericStepper` for editable prices (Fr./kg)
+  - `NumericStepper` for editable material prices (Fr./kg for primer and topcoat)
+  - `NumericStepper` for editable additive prices (Fr./kg for hardener and thinner)
   - `NumericStepper` for hardener percentages (primer and topcoat)
   - `NumericStepper` for thinner percentages (primer and topcoat)
   - `NumericStepper` for time factor configuration (h/m²)

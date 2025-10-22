@@ -127,6 +127,10 @@ namespace RHCoatingApp
         public double PrimerThinnerPercent { get; set; } = 10.0;
         public double TopcoatHardenerPercent { get; set; } = 15.0;
         public double TopcoatThinnerPercent { get; set; } = 20.0;
+        
+        // Prices for additives (Fr./kg)
+        public double HardenerPricePerKg { get; set; } = 23.0;
+        public double ThinnerPricePerKg { get; set; } = 9.0;
     }
 
     public class MaterialInfo
